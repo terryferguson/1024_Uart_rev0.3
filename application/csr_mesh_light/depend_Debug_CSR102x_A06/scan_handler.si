@@ -1,0 +1,1646 @@
+   1                 		.file	"scan_handler.c"
+   2                 		.variant xap2+
+   3                 	
+   4                 		.large
+   5                 	
+   6                 		.section	.debug_abbrev,"",@progbits
+   7                 	.Ldebug_abbrev0:
+   8                 		.section	.debug_info,"",@progbits
+   9                 	.Ldebug_info0:
+  10                 		.section	.debug_line,"",@progbits
+  11                 	.Ldebug_line0:
+  12 0000 00 00 00 00 		.text
+  12      00 02 00 00 
+  12      00 00 01 01 
+  12      FB 0E 0D 00 
+  12      01 01 01 01 
+  13                 	.Ltext0:
+  14                 		.section	.bss.scan_timeout_tid,"aw",@nobits
+  15                 		.type	scan_timeout_tid, @object
+  16                 		.size	scan_timeout_tid, 1
+  17                 	scan_timeout_tid:
+  18 0000 00 00       		.space	1
+  19                 		.section	.text.scanTimeoutHandler,"ax",@progbits
+  20                 		.type	scanTimeoutHandler, @function
+  21                 	scanTimeoutHandler:
+  22                 	.LFB2:
+  23                 		.file 1 "../mesh_common/mesh/handlers/scan/scan_handler.c"
+   0:../mesh_common/mesh/handlers/scan/scan_handler.c **** /******************************************************************************
+   1:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  Copyright 2015 - 2016 Qualcomm Technologies International, Ltd.
+   2:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  Bluetooth Low Energy CSRmesh 2.1
+   3:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  Application version 2.1.0
+   4:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *
+   5:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  FILE
+   6:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *      scan_handler.c
+   7:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *
+   8:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  DESCRIPTION
+   9:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *      This file defines scanning related functions
+  10:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *
+  11:../mesh_common/mesh/handlers/scan/scan_handler.c ****  ******************************************************************************/
+  12:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+  13:../mesh_common/mesh/handlers/scan/scan_handler.c **** /*============================================================================*
+  14:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  SDK Header File
+  15:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *============================================================================*/
+  16:../mesh_common/mesh/handlers/scan/scan_handler.c **** #include <timer.h>
+  17:../mesh_common/mesh/handlers/scan/scan_handler.c **** #include <mem.h>
+  18:../mesh_common/mesh/handlers/scan/scan_handler.c **** #include <ls_api.h>
+  19:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+  20:../mesh_common/mesh/handlers/scan/scan_handler.c **** #ifdef GAIA_OTAU_RELAY_SUPPORT
+  21:../mesh_common/mesh/handlers/scan/scan_handler.c **** /*============================================================================*
+  22:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  Local Header File
+  23:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *============================================================================*/
+  24:../mesh_common/mesh/handlers/scan/scan_handler.c **** #include "cm_api.h"
+  25:../mesh_common/mesh/handlers/scan/scan_handler.c **** #include "cm_types.h"
+  26:../mesh_common/mesh/handlers/scan/scan_handler.c **** #include "user_config.h"
+  27:../mesh_common/mesh/handlers/scan/scan_handler.c **** #include "scan_handler.h"
+  28:../mesh_common/mesh/handlers/scan/scan_handler.c **** #include "csr_mesh.h"
+  29:../mesh_common/mesh/handlers/scan/scan_handler.c **** #include "csr_sched.h"
+  30:../mesh_common/mesh/handlers/scan/scan_handler.c **** #include "app_debug.h"
+  31:../mesh_common/mesh/handlers/scan/scan_handler.c **** #include "app_otau_client_handler.h"
+  32:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+  33:../mesh_common/mesh/handlers/scan/scan_handler.c **** /*============================================================================*
+  34:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  Private Definitions
+  35:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *============================================================================*/
+  36:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+  37:../mesh_common/mesh/handlers/scan/scan_handler.c **** /* UUID array */
+  38:../mesh_common/mesh/handlers/scan/scan_handler.c **** uint16  uuid[8];        
+  39:../mesh_common/mesh/handlers/scan/scan_handler.c **** uint16 temp_uuid[8];
+  40:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+  41:../mesh_common/mesh/handlers/scan/scan_handler.c **** /*============================================================================*
+  42:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  private Function Prototypes
+  43:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *============================================================================*/
+  44:../mesh_common/mesh/handlers/scan/scan_handler.c **** /*  This function is invoked when the scan timer expires */
+  45:../mesh_common/mesh/handlers/scan/scan_handler.c **** static void scanTimeoutHandler(uint16 tid);
+  46:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+  47:../mesh_common/mesh/handlers/scan/scan_handler.c **** /*============================================================================*
+  48:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  Private Data
+  49:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *============================================================================*/
+  50:../mesh_common/mesh/handlers/scan/scan_handler.c **** static timer_id scan_timeout_tid = TIMER_INVALID;
+  51:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+  52:../mesh_common/mesh/handlers/scan/scan_handler.c **** /*============================================================================*
+  53:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  private Function Implementations
+  54:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *============================================================================*/
+  55:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+  56:../mesh_common/mesh/handlers/scan/scan_handler.c **** /*----------------------------------------------------------------------------*
+  57:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  NAME
+  58:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *      scanTimeoutHandler
+  59:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *
+  60:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  DESCRIPTION
+  61:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *      This function is invoked when the scan timer expires. The function would
+  62:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *      display the list of scanned devices on the UART and requests the user
+  63:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *      to connect to a scanned device. If the required device is not found
+  64:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *      in the scan then the user can select the option to rescan.
+  65:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *
+  66:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  RETURNS/MODIFIES
+  67:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *      Nothing.
+  68:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *
+  69:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *----------------------------------------------------------------------------*/
+  70:../mesh_common/mesh/handlers/scan/scan_handler.c **** static void scanTimeoutHandler(uint16 tid)
+  71:../mesh_common/mesh/handlers/scan/scan_handler.c **** {
+  24                 	x0003
+  25 0000 FD 0B       	.LCFI0:
+  26                 		st	AL,@(0,Y)
+  27 0001 00 27       		.loc 1 73 0
+  72:../mesh_common/mesh/handlers/scan/scan_handler.c **** imed Out");
+  28                 	AH,@scan_timeout_tid
+  29 0002 00 00 00 11 		ld	AL,@(0,Y)
+  30 0004 00 17       		cmp	AL,@$XAP_AH
+  31 0005 00 00 00 85 		bne	.L3
+  32 0007 00 00 00 00 		.loc 1 77 0
+  32      00 F0 
+  73:../mesh_common/mesh/handlers/scan/scan_handler.c **** ndler(uint16 tid)
+  74:../mesh_common/mesh/handlers/scan/scan_handler.c **** {
+  75:../mesh_common/mesh/handlers/scan/scan_handler.c ****     if(tid == scan_timeout_tid )
+  76:../mesh_common/mesh/handlers/scan/scan_handler.c ****     {
+  33                 	L,#0x0000
+  34 000a 00 14       		st	AL,@scan_timeout_tid
+  35 000b 00 00 00 25 		.loc 1 80 0
+  77:../mesh_common/mesh/handlers/scan/scan_handler.c **** ------------------*/
+  78:../mesh_common/mesh/handlers/scan/scan_handler.c **** static void scanTimeoutHandler(uint16 tid)
+  79:../mesh_common/mesh/handlers/scan/scan_handler.c **** {
+  36                 	r	CMCentralStopScanning
+  37 000d 00 00 00 00 		.loc 1 82 0
+  37      00 9C 
+  80:../mesh_common/mesh/handlers/scan/scan_handler.c **** -----------------------------------------------------------*/
+  81:../mesh_common/mesh/handlers/scan/scan_handler.c **** static void scanTimeoutHandler(uint16 tid)
+  38                 	d	AL,#0x0000
+  39 0010 00 14       		st	AL,@scanning_ongoing
+  40 0011 00 00 00 25 		.loc 1 83 0
+  82:../mesh_common/mesh/handlers/scan/scan_handler.c **** --------------------------------------------------------------*/
+  41                 	r	CSRmeshStart
+  42 0013 00 00 00 00 		.loc 1 84 0
+  42      00 9C 
+  83:../mesh_common/mesh/handlers/scan/scan_handler.c **** ODIFIES
+  43                 	d	AL,#0x0001
+  44 0016 01 14       		bsr	CSRSchedEnableListening
+  45 0017 00 00 00 00 	.L3:
+  45      00 9C 
+  46                 		.loc 1 87 0
+  84:../mesh_common/mesh/handlers/scan/scan_handler.c ****  device is not found
+  85:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *      in the scan then the user can select the option to rescan.
+  86:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *
+  47                 	vel	#0x0003
+  48 001a FD 0F       	.LFE2:
+  49                 		.size	scanTimeoutHandler, .-scanTimeoutHandler
+  50                 		.equ	__size_of_scanTimeoutHandler,. - scanTimeoutHandler
+  51                 		.section	.text.StartScanning,"ax",@progbits
+  52                 		.global	StartScanning
+  53                 		.type	StartScanning, @function
+  54                 	StartScanning:
+  55                 	.LFB3:
+  56                 		.loc 1 105 0
+  87:../mesh_common/mesh/handlers/scan/scan_handler.c **** evice. If the required device is not found
+  88:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *      in the scan then the user can select the option to rescan.
+  89:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *
+  90:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  RETURNS/MODIFIES
+  91:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *      Nothing.
+  92:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *
+  93:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *----------------------------------------------------------------------------*/
+  94:../mesh_common/mesh/handlers/scan/scan_handler.c **** static void scanTimeoutHandler(uint16 tid)
+  95:../mesh_common/mesh/handlers/scan/scan_handler.c **** {
+  96:../mesh_common/mesh/handlers/scan/scan_handler.c ****     if(tid == scan_timeout_tid )
+  97:../mesh_common/mesh/handlers/scan/scan_handler.c ****     {
+  98:../mesh_common/mesh/handlers/scan/scan_handler.c ****         DEBUG_STR("\r\nScanning Timed Out");
+  99:../mesh_common/mesh/handlers/scan/scan_handler.c ****         
+ 100:../mesh_common/mesh/handlers/scan/scan_handler.c ****         scan_timeout_tid = TIMER_INVALID;
+ 101:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+ 102:../mesh_common/mesh/handlers/scan/scan_handler.c ****         /* Stop scanning */
+ 103:../mesh_common/mesh/handlers/scan/scan_handler.c ****         CMCentralStopScanning();
+ 104:../mesh_common/mesh/handlers/scan/scan_handler.c ****         
+  57                 	x0013
+  58 0000 ED 0B       	.LCFI1:
+  59                 		st	AL,@(0x000e,Y)
+  60 0001 0E 27       		.loc 1 108 0
+ 105:../mesh_common/mesh/handlers/scan/scan_handler.c **** meout_tid = TIMER_INVALID;
+ 106:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+ 107:../mesh_common/mesh/handlers/scan/scan_handler.c ****         /* Stop scanning */
+  61                 	AL,@scan_timeout_tid
+  62 0002 00 00 00 15 		bsr	TimerDelete
+  63 0004 00 00 00 00 		.loc 1 109 0
+  63      00 9C 
+ 108:../mesh_common/mesh/handlers/scan/scan_handler.c **** anning Timed Out");
+  64                 		AL,#0x0000
+  65 0007 00 14       		st	AL,@scan_timeout_tid
+  66 0008 00 00 00 25 		.loc 1 111 0
+ 109:../mesh_common/mesh/handlers/scan/scan_handler.c **** ndler(uint16 tid)
+ 110:../mesh_common/mesh/handlers/scan/scan_handler.c **** {
+  67                 		AL,#0x0000
+  68 000a 00 14       		bsr	StopScanning
+  69 000b 00 00 00 00 		.loc 1 112 0
+  69      00 9C 
+ 111:../mesh_common/mesh/handlers/scan/scan_handler.c **** -----------------------------------------------------------*/
+  70                 		AL,#0x0000
+  71 000e 00 14       		st	AL,@(0,Y)
+  72 000f 00 27       		ld	AL,#0x0000
+  73 0010 00 14       		ld	AH,#0x0000
+  74 0011 00 10       		bsr	LsStartStopScan
+  75 0012 00 00 00 00 		.loc 1 117 0
+  75      00 9C 
+ 112:../mesh_common/mesh/handlers/scan/scan_handler.c **** ODIFIES
+ 113:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *      Nothing.
+ 114:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *
+ 115:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *----------------------------------------------------------------------------*/
+ 116:../mesh_common/mesh/handlers/scan/scan_handler.c **** static void scanTimeoutHandler(uint16 tid)
+  76                 	SRmeshStop
+  77 0015 00 00 00 00 		.loc 1 119 0
+  77      00 9C 
+ 117:../mesh_common/mesh/handlers/scan/scan_handler.c **** --------------------------------------------------------------*/
+ 118:../mesh_common/mesh/handlers/scan/scan_handler.c **** static void scanTimeoutHandler(uint16 tid)
+  78                 	d	AL,#0x0000
+  79 0018 00 14       		st	AL,@(0x000b,Y)
+  80 0019 0B 27       		.loc 1 120 0
+ 119:../mesh_common/mesh/handlers/scan/scan_handler.c **** --------------------------------------------------------------*/
+  81                 		AL,#0x0001
+  82 001a 01 14       		st	AL,@(0x0003,Y)
+  83 001b 03 27       		.loc 1 121 0
+ 120:../mesh_common/mesh/handlers/scan/scan_handler.c **** ODIFIES
+  84                 		AL,#0x0001
+  85 001c 01 14       		st	AL,@(0x0004,Y)
+  86 001d 04 27       		.loc 1 122 0
+ 121:../mesh_common/mesh/handlers/scan/scan_handler.c ****  device is not found
+  87                 		AL,#0x0000
+  88 001e 00 14       		st	AL,@(0x0005,Y)
+  89 001f 05 27       		ld	AL,#0x2710
+  90 0020 27 00 10 14 		st	AL,@(0x0006,Y)
+  91 0022 06 27       		.loc 1 123 0
+ 122:../mesh_common/mesh/handlers/scan/scan_handler.c **** ices on the UART and requests the user
+  92                 	L,#0x0000
+  93 0023 00 14       		st	AL,@(0x0007,Y)
+  94 0024 07 27       		ld	AL,#0x2710
+  95 0025 27 00 10 14 		st	AL,@(0x0008,Y)
+  96 0027 08 27       		.loc 1 124 0
+ 123:../mesh_common/mesh/handlers/scan/scan_handler.c **** can timer expires. The function would
+  97                 	L,#0x0001
+  98 0028 01 14       		st	AL,@(0x0009,Y)
+  99 0029 09 27       		.loc 1 125 0
+ 124:../mesh_common/mesh/handlers/scan/scan_handler.c **** anTimeoutHandler
+ 100                 		AL,#0x0000
+ 101 002a 00 14       		st	AL,@(0x000a,Y)
+ 102 002b 0A 27       		.loc 1 126 0
+ 125:../mesh_common/mesh/handlers/scan/scan_handler.c **** */
+ 103                 		AL,#0x0002
+ 104 002c 02 14       		st	AL,@(0x000c,Y)
+ 105 002d 0C 27       		.loc 1 128 0
+ 126:../mesh_common/mesh/handlers/scan/scan_handler.c **** ====*
+ 127:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  private Function Implementations
+ 106                 		AL,#0x0010
+ 107 002e 10 14       		st	AL,@(0,Y)
+ 108 002f 00 27       		ld	AL,#uuid
+ 109 0030 00 00 00 14 		ld	AH,@(0x000e,Y)
+ 110 0032 0E 13       		bsr	MemCopyPack
+ 111 0033 00 00 00 00 		.loc 1 130 0
+ 111      00 9C 
+ 128:../mesh_common/mesh/handlers/scan/scan_handler.c **** VALID;
+ 129:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+ 112                 	,@uuid+0x0007
+ 113 0036 00 00 00 15 		st	AL,@temp_uuid
+ 114 0038 00 00 00 25 		.loc 1 131 0
+ 130:../mesh_common/mesh/handlers/scan/scan_handler.c **** =========================================================================*/
+ 115                 		AL,@uuid+0x0006
+ 116 003a 00 00 00 15 		st	AL,@temp_uuid+0x0001
+ 117 003c 00 00 00 25 		.loc 1 132 0
+ 131:../mesh_common/mesh/handlers/scan/scan_handler.c **** =============================*
+ 118                 		AL,@uuid+0x0005
+ 119 003e 00 00 00 15 		st	AL,@temp_uuid+0x0002
+ 120 0040 00 00 00 25 		.loc 1 133 0
+ 132:../mesh_common/mesh/handlers/scan/scan_handler.c **** es */
+ 121                 		AL,@uuid+0x0004
+ 122 0042 00 00 00 15 		st	AL,@temp_uuid+0x0003
+ 123 0044 00 00 00 25 		.loc 1 134 0
+ 133:../mesh_common/mesh/handlers/scan/scan_handler.c **** =======================================================================*/
+ 124                 		AL,@uuid+0x0003
+ 125 0046 00 00 00 15 		st	AL,@temp_uuid+0x0004
+ 126 0048 00 00 00 25 		.loc 1 135 0
+ 134:../mesh_common/mesh/handlers/scan/scan_handler.c **** *  This function is invoked when the scan timer expires */
+ 127                 		AL,@uuid+0x0002
+ 128 004a 00 00 00 15 		st	AL,@temp_uuid+0x0005
+ 129 004c 00 00 00 25 		.loc 1 136 0
+ 135:../mesh_common/mesh/handlers/scan/scan_handler.c **** =======================================================================*/
+ 130                 		AL,@uuid+0x0001
+ 131 004e 00 00 00 15 		st	AL,@temp_uuid+0x0006
+ 132 0050 00 00 00 25 		.loc 1 137 0
+ 136:../mesh_common/mesh/handlers/scan/scan_handler.c **** *  This function is invoked when the scan timer expires */
+ 133                 		AL,@uuid
+ 134 0052 00 00 00 15 		st	AL,@temp_uuid+0x0007
+ 135 0054 00 00 00 25 		.loc 1 139 0
+ 137:../mesh_common/mesh/handlers/scan/scan_handler.c **** =======================================================================*/
+ 138:../mesh_common/mesh/handlers/scan/scan_handler.c **** /*  This function is invoked when the scan timer expires */
+ 136                 		AL,#temp_uuid
+ 137 0056 00 00 00 14 		st	AL,@(0x000d,Y)
+ 138 0058 0D 27       		.loc 1 142 0
+ 139:../mesh_common/mesh/handlers/scan/scan_handler.c **** atic void scanTimeoutHandler(uint16 tid);
+ 140:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+ 141:../mesh_common/mesh/handlers/scan/scan_handler.c **** /*============================================================================*
+ 139                 		AL,@$XAP_UY
+ 140 0059 00 00 00 15 		add	AL,#0x0003
+ 141 005b 03 34       		bsr	CMCentralSetScanParams
+ 142 005c 00 00 00 00 		.loc 1 145 0
+ 142      00 9C 
+ 142:../mesh_common/mesh/handlers/scan/scan_handler.c **** es */
+ 143:../mesh_common/mesh/handlers/scan/scan_handler.c **** static void scanTimeoutHandler(uint16 tid);
+ 144:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+ 143                 	AL,#0x0001
+ 144 005f 01 14       		ld	AH,#0x0000
+ 145 0060 00 10       		bsr	CMCentralStartScanningExt
+ 146 0061 00 00 00 00 		.loc 1 148 0
+ 146      00 9C 
+ 145:../mesh_common/mesh/handlers/scan/scan_handler.c **** ========================*/
+ 146:../mesh_common/mesh/handlers/scan/scan_handler.c **** /*  This function is invoked when the scan timer expires */
+ 147:../mesh_common/mesh/handlers/scan/scan_handler.c **** static void scanTimeoutHandler(uint16 tid);
+ 147                 	AL,#0x0001
+ 148 0064 01 14       		st	AL,@scanning_ongoing
+ 149 0065 00 00 00 25 		.loc 1 150 0
+ 148:../mesh_common/mesh/handlers/scan/scan_handler.c **** ==========================*/
+ 149:../mesh_common/mesh/handlers/scan/scan_handler.c **** /*  This function is invoked when the scan timer expires */
+ 150                 		AL,#lwrd(scanTimeoutHandler)
+ 151 0067 00 00 00 14 		st	AL,@(0x0010,Y)
+ 152 0069 10 27       		ld	AL,#hwrd(scanTimeoutHandler)
+ 153 006a 00 00 00 14 		st	AL,@(0x000f,Y)
+ 154 006c 0F 27       		ld	AL,#0x0001
+ 155 006d 01 14       		st	AL,@(0,Y)
+ 156 006e 00 27       		ld	AL,@(0x0010,Y)
+ 157 006f 10 17       		st	AL,@(0x0002,Y)
+ 158 0070 02 27       		ld	AL,@(0x000f,Y)
+ 159 0071 0F 17       		st	AL,@(0x0001,Y)
+ 160 0072 01 27       		ld	AH,#0x0aba
+ 161 0073 0B 00 BA 10 		ld	AL,#0x9500
+ 162 0075 95 00 00 14 		bsr	TimerCreate
+ 163 0077 00 00 00 00 		st	AL,@scan_timeout_tid
+ 163      00 9C 
+ 164 007a 00 00 00 25 		.loc 1 153 0
+ 150:../mesh_common/mesh/handlers/scan/scan_handler.c **** =======================================================================*/
+ 151:../mesh_common/mesh/handlers/scan/scan_handler.c **** /*  This function is invoked when the scan timer expires */
+ 152:../mesh_common/mesh/handlers/scan/scan_handler.c **** static void scanTimeoutHandler(uint16 tid);
+ 165                 	
+ 166 007c ED 0F       	.LFE3:
+ 167                 		.size	StartScanning, .-StartScanning
+ 168                 		.global	__size_of_StartScanning
+ 169                 		.equ	__size_of_StartScanning,. - StartScanning
+ 170                 		.section	.text.StopScanning,"ax",@progbits
+ 171                 		.global	StopScanning
+ 172                 		.type	StopScanning, @function
+ 173                 	StopScanning:
+ 174                 	.LFB4:
+ 175                 		.loc 1 167 0
+ 153:../mesh_common/mesh/handlers/scan/scan_handler.c **** ============================================================================*
+ 154:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  Private Data
+ 155:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *============================================================================*/
+ 156:../mesh_common/mesh/handlers/scan/scan_handler.c **** static timer_id scan_timeout_tid = TIMER_INVALID;
+ 157:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+ 158:../mesh_common/mesh/handlers/scan/scan_handler.c **** /*============================================================================*
+ 159:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  private Function Implementations
+ 160:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *============================================================================*/
+ 161:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+ 162:../mesh_common/mesh/handlers/scan/scan_handler.c **** /*----------------------------------------------------------------------------*
+ 163:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  NAME
+ 164:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *      scanTimeoutHandler
+ 165:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *
+ 166:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  DESCRIPTION
+ 176                 	x0003
+ 177 0000 FD 0B       	.LCFI2:
+ 178                 		st	AL,@(0,Y)
+ 179 0001 00 27       		.loc 1 168 0
+ 167:../mesh_common/mesh/handlers/scan/scan_handler.c **** -------------------------------------------------------------*
+ 180                 		@(0,Y)
+ 181 0002 00 9B       		beq	.L7
+ 182 0003 00 00 00 00 		.loc 1 170 0
+ 182      00 F4 
+ 168:../mesh_common/mesh/handlers/scan/scan_handler.c **** ======================================*/
+ 169:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+ 183                 		AL,@scan_timeout_tid
+ 184 0006 00 00 00 15 		bsr	TimerDelete
+ 185 0008 00 00 00 00 		.loc 1 171 0
+ 185      00 9C 
+ 170:../mesh_common/mesh/handlers/scan/scan_handler.c **** ==*
+ 186                 		AL,#0x0000
+ 187 000b 00 14       		st	AL,@scan_timeout_tid
+ 188 000c 00 00 00 25 		bra	.L9
+ 189 000e 00 00 00 00 	.L7:
+ 189      00 E0 
+ 190                 		.loc 1 176 0
+ 171:../mesh_common/mesh/handlers/scan/scan_handler.c **** c timer_id scan_timeout_tid = TIMER_INVALID;
+ 172:../mesh_common/mesh/handlers/scan/scan_handler.c **** 
+ 173:../mesh_common/mesh/handlers/scan/scan_handler.c **** /*============================================================================*
+ 174:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  private Function Implementations
+ 175:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *============================================================================*/
+ 191                 	CMCentralStopScanning
+ 192 0011 00 00 00 00 	.L9:
+ 192      00 9C 
+ 193                 		.loc 1 178 0
+ 176:../mesh_common/mesh/handlers/scan/scan_handler.c **** ====*
+ 177:../mesh_common/mesh/handlers/scan/scan_handler.c ****  *  private Function Implementations
+ 194                 	avel	#0x0003
+ 195 0014 FD 0F       	.LFE4:
+ 196                 		.size	StopScanning, .-StopScanning
+ 197                 		.global	__size_of_StopScanning
+ 198                 		.equ	__size_of_StopScanning,. - StopScanning
+ 199                 		.comm scanning_ongoing, 1, 1
+ 200                 	
+ 201                 		.comm uuid, 8, 1
+ 202                 	
+ 203                 		.comm temp_uuid, 8, 1
+ 204                 	
+ 205                 		.section	.debug_frame,"",@progbits
+ 206                 	.Lframe0:
+ 207                 		.4byte	.LECIE0-.LSCIE0
+ 208 0000 00 00 00 00 	.LSCIE0:
+ 209                 		.4byte	0xffffffff
+ 210 0002 FF FF FF FF 		.1byte	0x1
+ 211 0004 01          		.ascii "\000"
+ 212 0004 00          		.1byte	0x1
+ 213 0005 01          		.1byte	0x7f
+ 214 0005 7F          		.1byte	0x3
+ 215 0006 03          		.1byte	0xc
+ 216 0006 0C          		.1byte	0x5
+ 217 0007 05          		.1byte	0x0
+ 218 0007 00          		.p2align	2
+ 219                 	.LECIE0:
+ 220                 	.LSFDE0:
+ 221                 		.4byte	.LEFDE0-.LASFDE0
+ 222 0008 00 00 00 00 	.LASFDE0:
+ 223                 		.4byte	.Lframe0
+ 224 000a 00 00 00 00 		.4byte	.LFB2
+ 225 000c 00 00 00 00 		.4byte	.LFE2-.LFB2
+ 226 000e 00 00 00 00 		.1byte	0x4
+ 227 0010 41          		.4byte	.LCFI0-.LFB2
+ 228                 		.1byte	0xe
+ 229 0010 0E          		.1byte	0x3
+ 230 0011 03          		.1byte	0x83
+ 231 0011 83          		.1byte	0x2
+ 232 0012 02          		.1byte	0x82
+ 233 0012 82          		.1byte	0x1
+ 234 0013 01          		.p2align	2
+ 235 0013 00          	.LEFDE0:
+ 236                 	.LSFDE2:
+ 237                 		.4byte	.LEFDE2-.LASFDE2
+ 238 0014 00 00 00 00 	.LASFDE2:
+ 239                 		.4byte	.Lframe0
+ 240 0016 00 00 00 00 		.4byte	.LFB3
+ 241 0018 00 00 00 00 		.4byte	.LFE3-.LFB3
+ 242 001a 00 00 00 00 		.1byte	0x4
+ 243 001c 41          		.4byte	.LCFI1-.LFB3
+ 244                 		.1byte	0xe
+ 245 001c 0E          		.1byte	0x13
+ 246 001d 13          		.1byte	0x83
+ 247 001d 83          		.1byte	0x2
+ 248 001e 02          		.1byte	0x82
+ 249 001e 82          		.1byte	0x1
+ 250 001f 01          		.p2align	2
+ 251 001f 00          	.LEFDE2:
+ 252                 	.LSFDE4:
+ 253                 		.4byte	.LEFDE4-.LASFDE4
+ 254 0020 00 00 00 00 	.LASFDE4:
+ 255                 		.4byte	.Lframe0
+ 256 0022 00 00 00 00 		.4byte	.LFB4
+ 257 0024 00 00 00 00 		.4byte	.LFE4-.LFB4
+ 258 0026 00 00 00 00 		.1byte	0x4
+ 259 0028 41          		.4byte	.LCFI2-.LFB4
+ 260                 		.1byte	0xe
+ 261 0028 0E          		.1byte	0x3
+ 262 0029 03          		.1byte	0x83
+ 263 0029 83          		.1byte	0x2
+ 264 002a 02          		.1byte	0x82
+ 265 002a 82          		.1byte	0x1
+ 266 002b 01          		.p2align	2
+ 267 002b 00          	.LEFDE4:
+ 268                 		.text
+ 269                 	.Letext0:
+ 270                 		.section	.debug_loc,"",@progbits
+ 271                 	.Ldebug_loc0:
+ 272                 	.LLST0:
+ 273                 		.4byte	.LFB2
+ 274 0000 00 00 00 00 		.4byte	.LCFI0
+ 275 0002 00 00 00 00 		.2byte	0x1
+ 276 0004 00 01       		.1byte	0x55
+ 277 0005 55          		.4byte	.LCFI0
+ 278 0005 00 00 00 00 		.4byte	.LFE2
+ 279 0007 00 00 00 00 		.2byte	0x2
+ 280 0009 00 02       		.1byte	0x75
+ 281 000a 75          		.1byte	0x3
+ 282 000b 03          		.4byte	0x0
+ 283 000b 00 00 00 00 		.4byte	0x0
+ 284 000d 00 00 00 00 	.LLST1:
+ 285                 		.4byte	.LFB3
+ 286 000f 00 00 00 00 		.4byte	.LCFI1
+ 287 0011 00 00 00 00 		.2byte	0x1
+ 288 0013 00 01       		.1byte	0x55
+ 289 0014 55          		.4byte	.LCFI1
+ 290 0015 00 00 00 00 		.4byte	.LFE3
+ 291 0017 00 00 00 00 		.2byte	0x2
+ 292 0019 00 02       		.1byte	0x75
+ 293 001a 75          		.1byte	0x13
+ 294 001a 13          		.4byte	0x0
+ 295 001b 00 00 00 00 		.4byte	0x0
+ 296 001d 00 00 00 00 	.LLST2:
+ 297                 		.4byte	.LFB4
+ 298 001f 00 00 00 00 		.4byte	.LCFI2
+ 299 0021 00 00 00 00 		.2byte	0x1
+ 300 0023 00 01       		.1byte	0x55
+ 301 0024 55          		.4byte	.LCFI2
+ 302 0024 00 00 00 00 		.4byte	.LFE4
+ 303 0026 00 00 00 00 		.2byte	0x2
+ 304 0028 00 02       		.1byte	0x75
+ 305 0029 75          		.1byte	0x3
+ 306 002a 03          		.4byte	0x0
+ 307 002a 00 00 00 00 		.4byte	0x0
+ 308 002c 00 00 00 00 		.file 2 "C:/CSR102x_SDK-3.1.1/tools/include/CSR102x_A06/uenergy_types.h"
+ 309                 		.file 3 "C:/CSR102x_SDK-3.1.1/tools/include/CSR102x_A06/timer.h"
+ 310                 		.file 4 "C:/CSR102x_SDK-3.1.1/tools/include/CSR102x_A06/ls_types.h"
+ 311                 		.file 5 "C:/CSR102x_SDK-3.1.1/tools/include/CSR102x_A06/gatt_types.h"
+ 312                 		.file 6 "C:/CSR102x_SDK-3.1.1/tools/include/CSR102x_A06/gap_types.h"
+ 313                 		.file 7 "../mesh_common/components/connection_manager/cm_types.h"
+ 314                 		.file 8 "../mesh_common/mesh/handlers/otau_client/app_otau_client_handler.h"
+ 315                 		.section	.debug_info
+ 316                 		.4byte	0x371
+ 317 0000 00 00 03 71 		.2byte	0x2
+ 318 0002 00 02       		.4byte	.Ldebug_abbrev0
+ 319 0003 00 00 00 00 		.1byte	0x4
+ 320 0005 04          		.1byte	0x1
+ 321 0005 01          		.4byte	.LASF67
+ 322 0006 00 00 00 00 		.1byte	0x1
+ 323 0008 01          		.4byte	.LASF68
+ 324 0008 00 00 00 00 		.4byte	.LASF69
+ 325 000a 00 00 00 00 		.4byte	0x0
+ 326 000c 00 00 00 00 		.4byte	0x0
+ 327 000e 00 00 00 00 		.4byte	.Ldebug_ranges0+0x0
+ 328 0010 00 00 00 00 		.4byte	.Ldebug_line0
+ 329 0012 00 00 00 00 		.1byte	0x2
+ 330 0014 02          		.1byte	0x2
+ 331 0015 02          		.1byte	0x5
+ 332 0015 05          		.ascii "int\000"
+ 333 0016 69 6E 74 00 		.1byte	0x3
+ 334 0018 03          		.1byte	0x2
+ 335 0018 02          		.1byte	0x7
+ 336 0019 07          		.4byte	.LASF0
+ 337 0019 00 00 00 00 		.1byte	0x3
+ 338 001b 03          		.1byte	0x2
+ 339 001c 02          		.1byte	0x5
+ 340 001c 05          		.4byte	.LASF1
+ 341 001d 00 00 00 00 		.1byte	0x3
+ 342 001f 03          		.1byte	0x2
+ 343 001f 02          		.1byte	0x7
+ 344 0020 07          		.4byte	.LASF2
+ 345 0020 00 00 00 00 		.1byte	0x3
+ 346 0022 03          		.1byte	0x4
+ 347 0023 04          		.1byte	0x5
+ 348 0023 05          		.4byte	.LASF3
+ 349 0024 00 00 00 00 		.1byte	0x3
+ 350 0026 03          		.1byte	0x4
+ 351 0026 04          		.1byte	0x7
+ 352 0027 07          		.4byte	.LASF4
+ 353 0027 00 00 00 00 		.1byte	0x3
+ 354 0029 03          		.1byte	0x8
+ 355 002a 08          		.1byte	0x5
+ 356 002a 05          		.4byte	.LASF5
+ 357 002b 00 00 00 00 		.1byte	0x3
+ 358 002d 03          		.1byte	0x8
+ 359 002d 08          		.1byte	0x7
+ 360 002e 07          		.4byte	.LASF6
+ 361 002e 00 00 00 00 		.1byte	0x4
+ 362 0030 04          		.4byte	.LASF8
+ 363 0031 00 00 00 00 		.1byte	0x2
+ 364 0033 02          		.1byte	0x21
+ 365 0033 21          		.4byte	0x6c
+ 366 0034 00 00 00 6C 		.1byte	0x3
+ 367 0036 03          		.1byte	0x2
+ 368 0036 02          		.1byte	0x8
+ 369 0037 08          		.4byte	.LASF7
+ 370 0037 00 00 00 00 		.1byte	0x4
+ 371 0039 04          		.4byte	.LASF9
+ 372 003a 00 00 00 00 		.1byte	0x2
+ 373 003c 02          		.1byte	0x24
+ 374 003c 24          		.4byte	0x3e
+ 375 003d 00 00 00 3E 		.1byte	0x4
+ 376 003f 04          		.4byte	.LASF10
+ 377 003f 00 00 00 00 		.1byte	0x2
+ 378 0041 02          		.1byte	0x27
+ 379 0042 27          		.4byte	0x4c
+ 380 0042 00 00 00 4C 		.1byte	0x3
+ 381 0044 03          		.1byte	0x2
+ 382 0045 02          		.1byte	0x6
+ 383 0045 06          		.4byte	.LASF11
+ 384 0046 00 00 00 00 		.1byte	0x4
+ 385 0048 04          		.4byte	.LASF12
+ 386 0048 00 00 00 00 		.1byte	0x2
+ 387 004a 02          		.1byte	0x36
+ 388 004b 36          		.4byte	0x30
+ 389 004b 00 00 00 30 		.1byte	0x5
+ 390 004d 05          		.1byte	0x2
+ 391 004e 02          		.4byte	0x61
+ 392 004e 00 00 00 61 		.1byte	0x6
+ 393 0050 06          		.1byte	0x2
+ 394 0051 02          		.1byte	0x7
+ 395 0051 07          		.1byte	0x4
+ 396 0052 04          		.4byte	.LASF13
+ 397 0052 00 00 00 00 		.1byte	0x3
+ 398 0054 03          		.1byte	0x65
+ 399 0055 65          		.4byte	0x73
+ 400 0055 00 00 00 73 		.1byte	0x7
+ 401 0057 07          		.4byte	0x73
+ 402 0058 00 00 00 73 		.4byte	0xbf
+ 403 005a 00 00 00 BF 		.1byte	0x8
+ 404 005c 08          		.4byte	0xa1
+ 405 005c 00 00 00 A1 		.1byte	0x7
+ 406 005e 07          		.1byte	0x0
+ 407 005f 00          		.1byte	0x9
+ 408 005f 09          		.1byte	0x2
+ 409 0060 02          		.1byte	0x4
+ 410 0060 04          		.1byte	0x30
+ 411 0061 30          		.4byte	0xe6
+ 412 0061 00 00 00 E6 		.1byte	0xa
+ 413 0063 0A          		.4byte	.LASF14
+ 414 0064 00 00 00 00 		.1byte	0x0
+ 415 0066 00          		.1byte	0xa
+ 416 0066 0A          		.4byte	.LASF15
+ 417 0067 00 00 00 00 		.1byte	0x1
+ 418 0069 01          		.1byte	0xa
+ 419 0069 0A          		.4byte	.LASF16
+ 420 006a 00 00 00 00 		.1byte	0x2
+ 421 006c 02          		.1byte	0xa
+ 422 006c 0A          		.4byte	.LASF17
+ 423 006d 00 00 00 00 		.1byte	0x3
+ 424 006f 03          		.1byte	0xa
+ 425 006f 0A          		.4byte	.LASF18
+ 426 0070 00 00 00 00 		.1byte	0x7f
+ 427 0072 7F          		.1byte	0x0
+ 428 0072 00          		.1byte	0x4
+ 429 0073 04          		.4byte	.LASF19
+ 430 0073 00 00 00 00 		.1byte	0x4
+ 431 0075 04          		.1byte	0x37
+ 432 0076 37          		.4byte	0xbf
+ 433 0076 00 00 00 BF 		.1byte	0x9
+ 434 0078 09          		.1byte	0x2
+ 435 0079 02          		.1byte	0x4
+ 436 0079 04          		.1byte	0x3b
+ 437 007a 3B          		.4byte	0x10c
+ 438 007a 00 00 01 0C 		.1byte	0xa
+ 439 007c 0A          		.4byte	.LASF20
+ 440 007d 00 00 00 00 		.1byte	0x0
+ 441 007f 00          		.1byte	0xa
+ 442 007f 0A          		.4byte	.LASF21
+ 443 0080 00 00 00 00 		.1byte	0x1
+ 444 0082 01          		.1byte	0xa
+ 445 0082 0A          		.4byte	.LASF22
+ 446 0083 00 00 00 00 		.1byte	0x7f
+ 447 0085 7F          		.1byte	0x0
+ 448 0085 00          		.1byte	0x4
+ 449 0086 04          		.4byte	.LASF23
+ 450 0086 00 00 00 00 		.1byte	0x4
+ 451 0088 04          		.1byte	0x40
+ 452 0089 40          		.4byte	0xf1
+ 453 0089 00 00 00 F1 		.1byte	0x9
+ 454 008b 09          		.1byte	0x2
+ 455 008c 02          		.1byte	0x4
+ 456 008c 04          		.1byte	0x44
+ 457 008d 44          		.4byte	0x156
+ 458 008d 00 00 01 56 		.1byte	0xa
+ 459 008f 0A          		.4byte	.LASF24
+ 460 0090 00 00 00 00 		.1byte	0x0
+ 461 0092 00          		.1byte	0xa
+ 462 0092 0A          		.4byte	.LASF25
+ 463 0093 00 00 00 00 		.1byte	0x1
+ 464 0095 01          		.1byte	0xa
+ 465 0095 0A          		.4byte	.LASF26
+ 466 0096 00 00 00 00 		.1byte	0x0
+ 467 0098 00          		.1byte	0xa
+ 468 0098 0A          		.4byte	.LASF27
+ 469 0099 00 00 00 00 		.1byte	0x0
+ 470 009b 00          		.1byte	0xa
+ 471 009b 0A          		.4byte	.LASF28
+ 472 009c 00 00 00 00 		.1byte	0x1
+ 473 009e 01          		.1byte	0xa
+ 474 009e 0A          		.4byte	.LASF29
+ 475 009f 00 00 00 00 		.1byte	0x0
+ 476 00a1 00          		.1byte	0xa
+ 477 00a1 0A          		.4byte	.LASF30
+ 478 00a2 00 00 00 00 		.1byte	0x1
+ 479 00a4 01          		.1byte	0xa
+ 480 00a4 0A          		.4byte	.LASF31
+ 481 00a5 00 00 00 00 		.1byte	0x0
+ 482 00a7 00          		.1byte	0xa
+ 483 00a7 0A          		.4byte	.LASF32
+ 484 00a8 00 00 00 00 		.1byte	0x1
+ 485 00aa 01          		.1byte	0x0
+ 486 00aa 00          		.1byte	0x4
+ 487 00ab 04          		.4byte	.LASF33
+ 488 00ab 00 00 00 00 		.1byte	0x4
+ 489 00ad 04          		.1byte	0x52
+ 490 00ae 52          		.4byte	0x117
+ 491 00ae 00 00 01 17 		.1byte	0x9
+ 492 00b0 09          		.1byte	0x2
+ 493 00b1 02          		.1byte	0x5
+ 494 00b1 05          		.1byte	0x23
+ 495 00b2 23          		.4byte	0x17c
+ 496 00b2 00 00 01 7C 		.1byte	0xa
+ 497 00b4 0A          		.4byte	.LASF34
+ 498 00b5 00 00 00 00 		.1byte	0x0
+ 499 00b7 00          		.1byte	0xa
+ 500 00b7 0A          		.4byte	.LASF35
+ 501 00b8 00 00 00 00 		.1byte	0x1
+ 502 00ba 01          		.1byte	0xa
+ 503 00ba 0A          		.4byte	.LASF36
+ 504 00bb 00 00 00 00 		.1byte	0x2
+ 505 00bd 02          		.1byte	0x0
+ 506 00bd 00          		.1byte	0x4
+ 507 00be 04          		.4byte	.LASF37
+ 508 00be 00 00 00 00 		.1byte	0x5
+ 509 00c0 05          		.1byte	0x27
+ 510 00c1 27          		.4byte	0x161
+ 511 00c1 00 00 01 61 		.1byte	0x9
+ 512 00c3 09          		.1byte	0x2
+ 513 00c4 02          		.1byte	0x6
+ 514 00c4 06          		.1byte	0xad
+ 515 00c5 AD          		.4byte	0x1a2
+ 516 00c5 00 00 01 A2 		.1byte	0xa
+ 517 00c7 0A          		.4byte	.LASF38
+ 518 00c8 00 00 00 00 		.1byte	0x0
+ 519 00ca 00          		.1byte	0xa
+ 520 00ca 0A          		.4byte	.LASF39
+ 521 00cb 00 00 00 00 		.1byte	0x1
+ 522 00cd 01          		.1byte	0xa
+ 523 00cd 0A          		.4byte	.LASF40
+ 524 00ce 00 00 00 00 		.1byte	0x2
+ 525 00d0 02          		.1byte	0x0
+ 526 00d0 00          		.1byte	0x4
+ 527 00d1 04          		.4byte	.LASF41
+ 528 00d1 00 00 00 00 		.1byte	0x6
+ 529 00d3 06          		.1byte	0xc1
+ 530 00d4 C1          		.4byte	0x187
+ 531 00d4 00 00 01 87 		.1byte	0x9
+ 532 00d6 09          		.1byte	0x2
+ 533 00d7 02          		.1byte	0x6
+ 534 00d7 06          		.1byte	0xc9
+ 535 00d8 C9          		.4byte	0x1ce
+ 536 00d8 00 00 01 CE 		.1byte	0xa
+ 537 00da 0A          		.4byte	.LASF42
+ 538 00db 00 00 00 00 		.1byte	0x0
+ 539 00dd 00          		.1byte	0xa
+ 540 00dd 0A          		.4byte	.LASF43
+ 541 00de 00 00 00 00 		.1byte	0x1
+ 542 00e0 01          		.1byte	0xa
+ 543 00e0 0A          		.4byte	.LASF44
+ 544 00e1 00 00 00 00 		.1byte	0x2
+ 545 00e3 02          		.1byte	0xa
+ 546 00e3 0A          		.4byte	.LASF45
+ 547 00e4 00 00 00 00 		.1byte	0x3
+ 548 00e6 03          		.1byte	0x0
+ 549 00e6 00          		.1byte	0x4
+ 550 00e7 04          		.4byte	.LASF46
+ 551 00e7 00 00 00 00 		.1byte	0x6
+ 552 00e9 06          		.1byte	0xe9
+ 553 00ea E9          		.4byte	0x1ad
+ 554 00ea 00 00 01 AD 		.1byte	0x5
+ 555 00ec 05          		.1byte	0x2
+ 556 00ed 02          		.4byte	0x73
+ 557 00ed 00 00 00 73 		.1byte	0xb
+ 558 00ef 0B          		.1byte	0x4
+ 559 00f0 04          		.1byte	0x7
+ 560 00f0 07          		.2byte	0x15c
+ 561 00f1 01 5C       		.4byte	0x207
+ 562 00f2 00 00 02 07 		.1byte	0xc
+ 563 00f4 0C          		.4byte	.LASF47
+ 564 00f4 00 00 00 00 		.1byte	0x7
+ 565 00f6 07          		.2byte	0x15d
+ 566 00f7 01 5D       		.4byte	0x17c
+ 567 00f8 00 00 01 7C 		.1byte	0x2
+ 568 00fa 02          		.1byte	0x23
+ 569 00fa 23          		.1byte	0x0
+ 570 00fb 00          		.1byte	0xc
+ 571 00fb 0C          		.4byte	.LASF48
+ 572 00fc 00 00 00 00 		.1byte	0x7
+ 573 00fe 07          		.2byte	0x15f
+ 574 00fe 01 5F       		.4byte	0x1d9
+ 575 00ff 00 00 01 D9 		.1byte	0x2
+ 576 0101 02          		.1byte	0x23
+ 577 0102 23          		.1byte	0x1
+ 578 0102 01          		.1byte	0x0
+ 579 0103 00          		.1byte	0xd
+ 580 0103 0D          		.4byte	.LASF49
+ 581 0104 00 00 00 00 		.1byte	0x7
+ 582 0106 07          		.2byte	0x161
+ 583 0106 01 61       		.4byte	0x1df
+ 584 0107 00 00 01 DF 		.1byte	0xb
+ 585 0109 0B          		.1byte	0x16
+ 586 010a 16          		.1byte	0x7
+ 587 010a 07          		.2byte	0x165
+ 588 010b 01 65       		.4byte	0x295
+ 589 010c 00 00 02 95 		.1byte	0xc
+ 590 010e 0C          		.4byte	.LASF50
+ 591 010e 00 00 00 00 		.1byte	0x7
+ 592 0110 07          		.2byte	0x166
+ 593 0111 01 66       		.4byte	0x1a2
+ 594 0112 00 00 01 A2 		.1byte	0x2
+ 595 0114 02          		.1byte	0x23
+ 596 0114 23          		.1byte	0x0
+ 597 0115 00          		.1byte	0xc
+ 598 0115 0C          		.4byte	.LASF51
+ 599 0116 00 00 00 00 		.1byte	0x7
+ 600 0118 07          		.2byte	0x168
+ 601 0118 01 68       		.4byte	0x1ce
+ 602 0119 00 00 01 CE 		.1byte	0x2
+ 603 011b 02          		.1byte	0x23
+ 604 011c 23          		.1byte	0x1
+ 605 011c 01          		.1byte	0xc
+ 606 011d 0C          		.4byte	.LASF52
+ 607 011d 00 00 00 00 		.1byte	0x7
+ 608 011f 07          		.2byte	0x16a
+ 609 0120 01 6A       		.4byte	0x7e
+ 610 0121 00 00 00 7E 		.1byte	0x2
+ 611 0123 02          		.1byte	0x23
+ 612 0123 23          		.1byte	0x2
+ 613 0124 02          		.1byte	0xc
+ 614 0124 0C          		.4byte	.LASF53
+ 615 0125 00 00 00 00 		.1byte	0x7
+ 616 0127 07          		.2byte	0x16c
+ 617 0127 01 6C       		.4byte	0x7e
+ 618 0128 00 00 00 7E 		.1byte	0x2
+ 619 012a 02          		.1byte	0x23
+ 620 012b 23          		.1byte	0x4
+ 621 012b 04          		.1byte	0xc
+ 622 012c 0C          		.4byte	.LASF54
+ 623 012c 00 00 00 00 		.1byte	0x7
+ 624 012e 07          		.2byte	0x16e
+ 625 012f 01 6E       		.4byte	0x10c
+ 626 0130 00 00 01 0C 		.1byte	0x2
+ 627 0132 02          		.1byte	0x23
+ 628 0132 23          		.1byte	0x6
+ 629 0133 06          		.1byte	0xc
+ 630 0133 0C          		.4byte	.LASF55
+ 631 0134 00 00 00 00 		.1byte	0x7
+ 632 0136 07          		.2byte	0x170
+ 633 0136 01 70       		.4byte	0x156
+ 634 0137 00 00 01 56 		.1byte	0x2
+ 635 0139 02          		.1byte	0x23
+ 636 013a 23          		.1byte	0x7
+ 637 013a 07          		.1byte	0xc
+ 638 013b 0C          		.4byte	.LASF56
+ 639 013b 00 00 00 00 		.1byte	0x7
+ 640 013d 07          		.2byte	0x172
+ 641 013e 01 72       		.4byte	0xe6
+ 642 013f 00 00 00 E6 		.1byte	0x2
+ 643 0141 02          		.1byte	0x23
+ 644 0141 23          		.1byte	0x8
+ 645 0142 08          		.1byte	0xc
+ 646 0142 0C          		.4byte	.LASF48
+ 647 0143 00 00 00 00 		.1byte	0x7
+ 648 0145 07          		.2byte	0x174
+ 649 0145 01 74       		.4byte	0x207
+ 650 0146 00 00 02 07 		.1byte	0x2
+ 651 0148 02          		.1byte	0x23
+ 652 0149 23          		.1byte	0x9
+ 653 0149 09          		.1byte	0x0
+ 654 014a 00          		.1byte	0xd
+ 655 014a 0D          		.4byte	.LASF57
+ 656 014b 00 00 00 00 		.1byte	0x7
+ 657 014d 07          		.2byte	0x176
+ 658 014d 01 76       		.4byte	0x213
+ 659 014e 00 00 02 13 		.1byte	0x3
+ 660 0150 03          		.1byte	0x2
+ 661 0151 02          		.1byte	0x8
+ 662 0151 08          		.4byte	.LASF58
+ 663 0152 00 00 00 00 		.1byte	0xe
+ 664 0154 0E          		.4byte	.LASF70
+ 665 0154 00 00 00 00 		.1byte	0x1
+ 666 0156 01          		.1byte	0x48
+ 667 0157 48          		.1byte	0x1
+ 668 0157 01          		.4byte	.LFB2
+ 669 0158 00 00 00 00 		.4byte	.LFE2
+ 670 015a 00 00 00 00 		.4byte	.LLST0
+ 671 015c 00 00 00 00 		.4byte	0x2cf
+ 672 015e 00 00 02 CF 		.1byte	0xf
+ 673 0160 0F          		.ascii "tid\000"
+ 674 0160 74 69 64 00 		.1byte	0x1
+ 675 0162 01          		.1byte	0x47
+ 676 0163 47          		.4byte	0x73
+ 677 0163 00 00 00 73 		.1byte	0x2
+ 678 0165 02          		.1byte	0x76
+ 679 0166 76          		.1byte	0x0
+ 680 0166 00          		.1byte	0x0
+ 681 0167 00          		.1byte	0x10
+ 682 0167 10          		.1byte	0x1
+ 683 0168 01          		.4byte	.LASF60
+ 684 0168 00 00 00 00 		.1byte	0x1
+ 685 016a 01          		.1byte	0x69
+ 686 016b 69          		.1byte	0x1
+ 687 016b 01          		.4byte	.LFB3
+ 688 016c 00 00 00 00 		.4byte	.LFE3
+ 689 016e 00 00 00 00 		.4byte	.LLST1
+ 690 0170 00 00 00 00 		.4byte	0x305
+ 691 0172 00 00 03 05 		.1byte	0x11
+ 692 0174 11          		.4byte	.LASF59
+ 693 0174 00 00 00 00 		.1byte	0x1
+ 694 0176 01          		.1byte	0x68
+ 695 0177 68          		.4byte	0x9b
+ 696 0177 00 00 00 9B 		.1byte	0x2
+ 697 0179 02          		.1byte	0x76
+ 698 017a 76          		.1byte	0xe
+ 699 017a 0E          		.1byte	0x12
+ 700 017b 12          		.4byte	.LASF63
+ 701 017b 00 00 00 00 		.1byte	0x1
+ 702 017d 01          		.1byte	0x6a
+ 703 017e 6A          		.4byte	0x295
+ 704 017e 00 00 02 95 		.1byte	0x2
+ 705 0180 02          		.1byte	0x76
+ 706 0181 76          		.1byte	0x3
+ 707 0181 03          		.1byte	0x0
+ 708 0182 00          		.1byte	0x10
+ 709 0182 10          		.1byte	0x1
+ 710 0183 01          		.4byte	.LASF61
+ 711 0183 00 00 00 00 		.1byte	0x1
+ 712 0185 01          		.1byte	0xa7
+ 713 0186 A7          		.1byte	0x1
+ 714 0186 01          		.4byte	.LFB4
+ 715 0187 00 00 00 00 		.4byte	.LFE4
+ 716 0189 00 00 00 00 		.4byte	.LLST2
+ 717 018b 00 00 00 00 		.4byte	0x32d
+ 718 018d 00 00 03 2D 		.1byte	0x11
+ 719 018f 11          		.4byte	.LASF62
+ 720 018f 00 00 00 00 		.1byte	0x1
+ 721 0191 01          		.1byte	0xa6
+ 722 0192 A6          		.4byte	0x90
+ 723 0192 00 00 00 90 		.1byte	0x2
+ 724 0194 02          		.1byte	0x76
+ 725 0195 76          		.1byte	0x0
+ 726 0195 00          		.1byte	0x0
+ 727 0196 00          		.1byte	0x12
+ 728 0196 12          		.4byte	.LASF64
+ 729 0197 00 00 00 00 		.1byte	0x1
+ 730 0199 01          		.1byte	0x33
+ 731 0199 33          		.4byte	0xa4
+ 732 019a 00 00 00 A4 		.1byte	0x5
+ 733 019c 05          		.1byte	0x3
+ 734 019c 03          		.4byte	scan_timeout_tid
+ 735 019d 00 00 00 00 		.1byte	0x13
+ 736 019f 13          		.4byte	.LASF65
+ 737 019f 00 00 00 00 		.1byte	0x8
+ 738 01a1 08          		.1byte	0x35
+ 739 01a2 35          		.4byte	0x90
+ 740 01a2 00 00 00 90 		.1byte	0x1
+ 741 01a4 01          		.1byte	0x5
+ 742 01a5 05          		.1byte	0x3
+ 743 01a5 03          		.4byte	scanning_ongoing
+ 744 01a6 00 00 00 00 		.1byte	0x13
+ 745 01a8 13          		.4byte	.LASF48
+ 746 01a8 00 00 00 00 		.1byte	0x1
+ 747 01aa 01          		.1byte	0x27
+ 748 01ab 27          		.4byte	0xaf
+ 749 01ab 00 00 00 AF 		.1byte	0x1
+ 750 01ad 01          		.1byte	0x5
+ 751 01ae 05          		.1byte	0x3
+ 752 01ae 03          		.4byte	uuid
+ 753 01af 00 00 00 00 		.1byte	0x13
+ 754 01b1 13          		.4byte	.LASF66
+ 755 01b1 00 00 00 00 		.1byte	0x1
+ 756 01b3 01          		.1byte	0x28
+ 757 01b4 28          		.4byte	0xaf
+ 758 01b4 00 00 00 AF 		.1byte	0x1
+ 759 01b6 01          		.1byte	0x5
+ 760 01b7 05          		.1byte	0x3
+ 761 01b7 03          		.4byte	temp_uuid
+ 762 01b8 00 00 00 00 		.1byte	0x0
+ 763 01ba 00          		.section	.debug_abbrev
+ 764                 		.1byte	0x1
+ 765 0000 01          		.1byte	0x11
+ 766 0000 11          		.1byte	0x1
+ 767 0001 01          		.1byte	0x25
+ 768 0001 25          		.1byte	0xe
+ 769 0002 0E          		.1byte	0x13
+ 770 0002 13          		.1byte	0xb
+ 771 0003 0B          		.1byte	0x3
+ 772 0003 03          		.1byte	0xe
+ 773 0004 0E          		.1byte	0x1b
+ 774 0004 1B          		.1byte	0xe
+ 775 0005 0E          		.1byte	0x11
+ 776 0005 11          		.1byte	0x1
+ 777 0006 01          		.1byte	0x52
+ 778 0006 52          		.1byte	0x1
+ 779 0007 01          		.1byte	0x55
+ 780 0007 55          		.1byte	0x6
+ 781 0008 06          		.1byte	0x10
+ 782 0008 10          		.1byte	0x6
+ 783 0009 06          		.1byte	0x0
+ 784 0009 00          		.1byte	0x0
+ 785 000a 00          		.1byte	0x2
+ 786 000a 02          		.1byte	0x24
+ 787 000b 24          		.1byte	0x0
+ 788 000b 00          		.1byte	0xb
+ 789 000c 0B          		.1byte	0xb
+ 790 000c 0B          		.1byte	0x3e
+ 791 000d 3E          		.1byte	0xb
+ 792 000d 0B          		.1byte	0x3
+ 793 000e 03          		.1byte	0x8
+ 794 000e 08          		.1byte	0x0
+ 795 000f 00          		.1byte	0x0
+ 796 000f 00          		.1byte	0x3
+ 797 0010 03          		.1byte	0x24
+ 798 0010 24          		.1byte	0x0
+ 799 0011 00          		.1byte	0xb
+ 800 0011 0B          		.1byte	0xb
+ 801 0012 0B          		.1byte	0x3e
+ 802 0012 3E          		.1byte	0xb
+ 803 0013 0B          		.1byte	0x3
+ 804 0013 03          		.1byte	0xe
+ 805 0014 0E          		.1byte	0x0
+ 806 0014 00          		.1byte	0x0
+ 807 0015 00          		.1byte	0x4
+ 808 0015 04          		.1byte	0x16
+ 809 0016 16          		.1byte	0x0
+ 810 0016 00          		.1byte	0x3
+ 811 0017 03          		.1byte	0xe
+ 812 0017 0E          		.1byte	0x3a
+ 813 0018 3A          		.1byte	0xb
+ 814 0018 0B          		.1byte	0x3b
+ 815 0019 3B          		.1byte	0xb
+ 816 0019 0B          		.1byte	0x49
+ 817 001a 49          		.1byte	0x13
+ 818 001a 13          		.1byte	0x0
+ 819 001b 00          		.1byte	0x0
+ 820 001b 00          		.1byte	0x5
+ 821 001c 05          		.1byte	0xf
+ 822 001c 0F          		.1byte	0x0
+ 823 001d 00          		.1byte	0xb
+ 824 001d 0B          		.1byte	0xb
+ 825 001e 0B          		.1byte	0x49
+ 826 001e 49          		.1byte	0x13
+ 827 001f 13          		.1byte	0x0
+ 828 001f 00          		.1byte	0x0
+ 829 0020 00          		.1byte	0x6
+ 830 0020 06          		.1byte	0x24
+ 831 0021 24          		.1byte	0x0
+ 832 0021 00          		.1byte	0xb
+ 833 0022 0B          		.1byte	0xb
+ 834 0022 0B          		.1byte	0x3e
+ 835 0023 3E          		.1byte	0xb
+ 836 0023 0B          		.1byte	0x0
+ 837 0024 00          		.1byte	0x0
+ 838 0024 00          		.1byte	0x7
+ 839 0025 07          		.1byte	0x1
+ 840 0025 01          		.1byte	0x1
+ 841 0026 01          		.1byte	0x49
+ 842 0026 49          		.1byte	0x13
+ 843 0027 13          		.1byte	0x1
+ 844 0027 01          		.1byte	0x13
+ 845 0028 13          		.1byte	0x0
+ 846 0028 00          		.1byte	0x0
+ 847 0029 00          		.1byte	0x8
+ 848 0029 08          		.1byte	0x21
+ 849 002a 21          		.1byte	0x0
+ 850 002a 00          		.1byte	0x49
+ 851 002b 49          		.1byte	0x13
+ 852 002b 13          		.1byte	0x2f
+ 853 002c 2F          		.1byte	0xb
+ 854 002c 0B          		.1byte	0x0
+ 855 002d 00          		.1byte	0x0
+ 856 002d 00          		.1byte	0x9
+ 857 002e 09          		.1byte	0x4
+ 858 002e 04          		.1byte	0x1
+ 859 002f 01          		.1byte	0xb
+ 860 002f 0B          		.1byte	0xb
+ 861 0030 0B          		.1byte	0x3a
+ 862 0030 3A          		.1byte	0xb
+ 863 0031 0B          		.1byte	0x3b
+ 864 0031 3B          		.1byte	0xb
+ 865 0032 0B          		.1byte	0x1
+ 866 0032 01          		.1byte	0x13
+ 867 0033 13          		.1byte	0x0
+ 868 0033 00          		.1byte	0x0
+ 869 0034 00          		.1byte	0xa
+ 870 0034 0A          		.1byte	0x28
+ 871 0035 28          		.1byte	0x0
+ 872 0035 00          		.1byte	0x3
+ 873 0036 03          		.1byte	0xe
+ 874 0036 0E          		.1byte	0x1c
+ 875 0037 1C          		.1byte	0xd
+ 876 0037 0D          		.1byte	0x0
+ 877 0038 00          		.1byte	0x0
+ 878 0038 00          		.1byte	0xb
+ 879 0039 0B          		.1byte	0x13
+ 880 0039 13          		.1byte	0x1
+ 881 003a 01          		.1byte	0xb
+ 882 003a 0B          		.1byte	0xb
+ 883 003b 0B          		.1byte	0x3a
+ 884 003b 3A          		.1byte	0xb
+ 885 003c 0B          		.1byte	0x3b
+ 886 003c 3B          		.1byte	0x5
+ 887 003d 05          		.1byte	0x1
+ 888 003d 01          		.1byte	0x13
+ 889 003e 13          		.1byte	0x0
+ 890 003e 00          		.1byte	0x0
+ 891 003f 00          		.1byte	0xc
+ 892 003f 0C          		.1byte	0xd
+ 893 0040 0D          		.1byte	0x0
+ 894 0040 00          		.1byte	0x3
+ 895 0041 03          		.1byte	0xe
+ 896 0041 0E          		.1byte	0x3a
+ 897 0042 3A          		.1byte	0xb
+ 898 0042 0B          		.1byte	0x3b
+ 899 0043 3B          		.1byte	0x5
+ 900 0043 05          		.1byte	0x49
+ 901 0044 49          		.1byte	0x13
+ 902 0044 13          		.1byte	0x38
+ 903 0045 38          		.1byte	0xa
+ 904 0045 0A          		.1byte	0x0
+ 905 0046 00          		.1byte	0x0
+ 906 0046 00          		.1byte	0xd
+ 907 0047 0D          		.1byte	0x16
+ 908 0047 16          		.1byte	0x0
+ 909 0048 00          		.1byte	0x3
+ 910 0048 03          		.1byte	0xe
+ 911 0049 0E          		.1byte	0x3a
+ 912 0049 3A          		.1byte	0xb
+ 913 004a 0B          		.1byte	0x3b
+ 914 004a 3B          		.1byte	0x5
+ 915 004b 05          		.1byte	0x49
+ 916 004b 49          		.1byte	0x13
+ 917 004c 13          		.1byte	0x0
+ 918 004c 00          		.1byte	0x0
+ 919 004d 00          		.1byte	0xe
+ 920 004d 0E          		.1byte	0x2e
+ 921 004e 2E          		.1byte	0x1
+ 922 004e 01          		.1byte	0x3
+ 923 004f 03          		.1byte	0xe
+ 924 004f 0E          		.1byte	0x3a
+ 925 0050 3A          		.1byte	0xb
+ 926 0050 0B          		.1byte	0x3b
+ 927 0051 3B          		.1byte	0xb
+ 928 0051 0B          		.1byte	0x27
+ 929 0052 27          		.1byte	0xc
+ 930 0052 0C          		.1byte	0x11
+ 931 0053 11          		.1byte	0x1
+ 932 0053 01          		.1byte	0x12
+ 933 0054 12          		.1byte	0x1
+ 934 0054 01          		.1byte	0x40
+ 935 0055 40          		.1byte	0x6
+ 936 0055 06          		.1byte	0x1
+ 937 0056 01          		.1byte	0x13
+ 938 0056 13          		.1byte	0x0
+ 939 0057 00          		.1byte	0x0
+ 940 0057 00          		.1byte	0xf
+ 941 0058 0F          		.1byte	0x5
+ 942 0058 05          		.1byte	0x0
+ 943 0059 00          		.1byte	0x3
+ 944 0059 03          		.1byte	0x8
+ 945 005a 08          		.1byte	0x3a
+ 946 005a 3A          		.1byte	0xb
+ 947 005b 0B          		.1byte	0x3b
+ 948 005b 3B          		.1byte	0xb
+ 949 005c 0B          		.1byte	0x49
+ 950 005c 49          		.1byte	0x13
+ 951 005d 13          		.1byte	0x2
+ 952 005d 02          		.1byte	0xa
+ 953 005e 0A          		.1byte	0x0
+ 954 005e 00          		.1byte	0x0
+ 955 005f 00          		.1byte	0x10
+ 956 005f 10          		.1byte	0x2e
+ 957 0060 2E          		.1byte	0x1
+ 958 0060 01          		.1byte	0x3f
+ 959 0061 3F          		.1byte	0xc
+ 960 0061 0C          		.1byte	0x3
+ 961 0062 03          		.1byte	0xe
+ 962 0062 0E          		.1byte	0x3a
+ 963 0063 3A          		.1byte	0xb
+ 964 0063 0B          		.1byte	0x3b
+ 965 0064 3B          		.1byte	0xb
+ 966 0064 0B          		.1byte	0x27
+ 967 0065 27          		.1byte	0xc
+ 968 0065 0C          		.1byte	0x11
+ 969 0066 11          		.1byte	0x1
+ 970 0066 01          		.1byte	0x12
+ 971 0067 12          		.1byte	0x1
+ 972 0067 01          		.1byte	0x40
+ 973 0068 40          		.1byte	0x6
+ 974 0068 06          		.1byte	0x1
+ 975 0069 01          		.1byte	0x13
+ 976 0069 13          		.1byte	0x0
+ 977 006a 00          		.1byte	0x0
+ 978 006a 00          		.1byte	0x11
+ 979 006b 11          		.1byte	0x5
+ 980 006b 05          		.1byte	0x0
+ 981 006c 00          		.1byte	0x3
+ 982 006c 03          		.1byte	0xe
+ 983 006d 0E          		.1byte	0x3a
+ 984 006d 3A          		.1byte	0xb
+ 985 006e 0B          		.1byte	0x3b
+ 986 006e 3B          		.1byte	0xb
+ 987 006f 0B          		.1byte	0x49
+ 988 006f 49          		.1byte	0x13
+ 989 0070 13          		.1byte	0x2
+ 990 0070 02          		.1byte	0xa
+ 991 0071 0A          		.1byte	0x0
+ 992 0071 00          		.1byte	0x0
+ 993 0072 00          		.1byte	0x12
+ 994 0072 12          		.1byte	0x34
+ 995 0073 34          		.1byte	0x0
+ 996 0073 00          		.1byte	0x3
+ 997 0074 03          		.1byte	0xe
+ 998 0074 0E          		.1byte	0x3a
+ 999 0075 3A          		.1byte	0xb
+ 1000 0075 0B          		.1byte	0x3b
+ 1001 0076 3B          		.1byte	0xb
+ 1002 0076 0B          		.1byte	0x49
+ 1003 0077 49          		.1byte	0x13
+ 1004 0077 13          		.1byte	0x2
+ 1005 0078 02          		.1byte	0xa
+ 1006 0078 0A          		.1byte	0x0
+ 1007 0079 00          		.1byte	0x0
+ 1008 0079 00          		.1byte	0x13
+ 1009 007a 13          		.1byte	0x34
+ 1010 007a 34          		.1byte	0x0
+ 1011 007b 00          		.1byte	0x3
+ 1012 007b 03          		.1byte	0xe
+ 1013 007c 0E          		.1byte	0x3a
+ 1014 007c 3A          		.1byte	0xb
+ 1015 007d 0B          		.1byte	0x3b
+ 1016 007d 3B          		.1byte	0xb
+ 1017 007e 0B          		.1byte	0x49
+ 1018 007e 49          		.1byte	0x13
+ 1019 007f 13          		.1byte	0x3f
+ 1020 007f 3F          		.1byte	0xc
+ 1021 0080 0C          		.1byte	0x2
+ 1022 0080 02          		.1byte	0xa
+ 1023 0081 0A          		.1byte	0x0
+ 1024 0081 00          		.1byte	0x0
+ 1025 0082 00          		.1byte	0x0
+ 1026 0082 00          		.section	.debug_pubnames,"",@progbits
+ 1027                 		.4byte	0x5d
+ 1028 0000 00 00 00 5D 		.2byte	0x2
+ 1029 0002 00 02       		.4byte	.Ldebug_info0
+ 1030 0003 00 00 00 00 		.4byte	0x375
+ 1031 0005 00 00 03 75 		.4byte	0x2cf
+ 1032 0007 00 00 02 CF 		.ascii "StartScanning\000"
+ 1033 0009 53 74 61 72 		.4byte	0x305
+ 1033      74 53 63 61 
+ 1033      6E 6E 69 6E 
+ 1033      67 00 
+ 1034 0010 00 00 03 05 		.ascii "StopScanning\000"
+ 1035 0012 53 74 6F 70 		.4byte	0x33e
+ 1035      53 63 61 6E 
+ 1035      6E 69 6E 67 
+ 1035      00 
+ 1036 0018 00 00 03 3E 		.ascii "scanning_ongoing\000"
+ 1037 001a 73 63 61 6E 		.4byte	0x350
+ 1037      6E 69 6E 67 
+ 1037      5F 6F 6E 67 
+ 1037      6F 69 6E 67 
+ 1037      00 
+ 1038 0023 00 00 03 50 		.ascii "uuid\000"
+ 1039 0025 75 75 69 64 		.4byte	0x362
+ 1039      00 
+ 1040 0027 00 00 03 62 		.ascii "temp_uuid\000"
+ 1041 0029 74 65 6D 70 		.4byte	0x0
+ 1041      5F 75 75 69 
+ 1041      64 00 
+ 1042 002e 00 00 00 00 		.section	.debug_aranges,"",@progbits
+ 1043                 		.4byte	0x2c
+ 1044 0000 00 00 00 2C 		.2byte	0x2
+ 1045 0002 00 02       		.4byte	.Ldebug_info0
+ 1046 0003 00 00 00 00 		.1byte	0x4
+ 1047 0005 04          		.1byte	0x0
+ 1048 0005 00          		.2byte	0x0
+ 1049 0006 00 00       		.2byte	0x0
+ 1050 0007 00 00       		.4byte	.LFB2
+ 1051 0008 00 00 00 00 		.4byte	.LFE2-.LFB2
+ 1052 000a 00 00 00 00 		.4byte	.LFB3
+ 1053 000c 00 00 00 00 		.4byte	.LFE3-.LFB3
+ 1054 000e 00 00 00 00 		.4byte	.LFB4
+ 1055 0010 00 00 00 00 		.4byte	.LFE4-.LFB4
+ 1056 0012 00 00 00 00 		.4byte	0x0
+ 1057 0014 00 00 00 00 		.4byte	0x0
+ 1058 0016 00 00 00 00 		.section	.debug_ranges,"",@progbits
+ 1059                 	.Ldebug_ranges0:
+ 1060                 		.4byte	.Ltext0
+ 1061 0000 00 00 00 00 		.4byte	.Letext0
+ 1062 0002 00 00 00 00 		.4byte	.LFB2
+ 1063 0004 00 00 00 00 		.4byte	.LFE2
+ 1064 0006 00 00 00 00 		.4byte	.LFB3
+ 1065 0008 00 00 00 00 		.4byte	.LFE3
+ 1066 000a 00 00 00 00 		.4byte	.LFB4
+ 1067 000c 00 00 00 00 		.4byte	.LFE4
+ 1068 000e 00 00 00 00 		.4byte	0x0
+ 1069 0010 00 00 00 00 		.4byte	0x0
+ 1070 0012 00 00 00 00 		.section	.debug_str,"MS",@progbits,1
+ 1071                 	.LASF31:
+ 1072                 		.ascii "whitelist_mode_conn_false\000"
+ 1073 0000 77 68 69 74 	.LASF27:
+ 1073      65 6C 69 73 
+ 1073      74 5F 6D 6F 
+ 1073      64 65 5F 63 
+ 1073      6F 6E 6E 5F 
+ 1074                 		.ascii "whitelist_mode_scan_false\000"
+ 1075 000d 77 68 69 74 	.LASF41:
+ 1075      65 6C 69 73 
+ 1075      74 5F 6D 6F 
+ 1075      64 65 5F 73 
+ 1075      63 61 6E 5F 
+ 1076                 		.ascii "gap_mode_bond\000"
+ 1077 001a 67 61 70 5F 	.LASF62:
+ 1077      6D 6F 64 65 
+ 1077      5F 62 6F 6E 
+ 1077      64 00 
+ 1078                 		.ascii "del_timer\000"
+ 1079 0021 64 65 6C 5F 	.LASF40:
+ 1079      74 69 6D 65 
+ 1079      72 00 
+ 1080                 		.ascii "gap_mode_bond_yes\000"
+ 1081 0026 67 61 70 5F 	.LASF47:
+ 1081      6D 6F 64 65 
+ 1081      5F 62 6F 6E 
+ 1081      64 5F 79 65 
+ 1081      73 00 
+ 1082                 		.ascii "uuid_type\000"
+ 1083 002f 75 75 69 64 	.LASF17:
+ 1083      5F 74 79 70 
+ 1083      65 00 
+ 1084                 		.ascii "ls_addr_type_random_identity\000"
+ 1085 0034 6C 73 5F 61 	.LASF29:
+ 1085      64 64 72 5F 
+ 1085      74 79 70 65 
+ 1085      5F 72 61 6E 
+ 1085      64 6F 6D 5F 
+ 1086                 		.ascii "whitelist_mode_adv_false\000"
+ 1087 0042 77 68 69 74 	.LASF43:
+ 1087      65 6C 69 73 
+ 1087      74 5F 6D 6F 
+ 1087      64 65 5F 61 
+ 1087      64 76 5F 66 
+ 1088                 		.ascii "gap_mode_security_unauthenticate\000"
+ 1089 004f 67 61 70 5F 	.LASF56:
+ 1089      6D 6F 64 65 
+ 1089      5F 73 65 63 
+ 1089      75 72 69 74 
+ 1089      79 5F 75 6E 
+ 1090                 		.ascii "addr_type\000"
+ 1091 005f 61 64 64 72 	.LASF67:
+ 1091      5F 74 79 70 
+ 1091      65 00 
+ 1092                 		.ascii "GNU C 4.3.4 CSR version 31 for xap [2855778]\000"
+ 1093 0064 47 4E 55 20 	.LASF69:
+ 1093      43 20 34 2E 
+ 1093      33 2E 34 20 
+ 1093      43 53 52 20 
+ 1093      76 65 72 73 
+ 1094                 		.ascii "C:\\Users\\Admin\\Desktop\\1024_Uart_rev0.2 - Copy\\1024_Uart_rev0.2\\application\\csr_mes
+ 1095 007b 43 3A 5C 55 	.LASF51:
+ 1095      73 65 72 73 
+ 1095      5C 41 64 6D 
+ 1095      69 6E 5C 44 
+ 1095      65 73 6B 74 
+ 1096                 		.ascii "security\000"
+ 1097 00a8 73 65 63 75 	.LASF1:
+ 1097      72 69 74 79 
+ 1097      00 
+ 1098                 		.ascii "short int\000"
+ 1099 00ad 73 68 6F 72 	.LASF28:
+ 1099      74 20 69 6E 
+ 1099      74 00 
+ 1100                 		.ascii "whitelist_mode_scan_true\000"
+ 1101 00b2 77 68 69 74 	.LASF9:
+ 1101      65 6C 69 73 
+ 1101      74 5F 6D 6F 
+ 1101      64 65 5F 73 
+ 1101      63 61 6E 5F 
+ 1102                 		.ascii "uint16\000"
+ 1103 00be 75 69 6E 74 	.LASF23:
+ 1103      31 36 00 
+ 1104                 		.ascii "ls_scan_type\000"
+ 1105 00c2 6C 73 5F 73 	.LASF63:
+ 1105      63 61 6E 5F 
+ 1105      74 79 70 65 
+ 1105      00 
+ 1106                 		.ascii "scan_info\000"
+ 1107 00c8 73 63 61 6E 	.LASF14:
+ 1107      5F 69 6E 66 
+ 1107      6F 00 
+ 1108                 		.ascii "ls_addr_type_public\000"
+ 1109 00cd 6C 73 5F 61 	.LASF8:
+ 1109      64 64 72 5F 
+ 1109      74 79 70 65 
+ 1109      5F 70 75 62 
+ 1109      6C 69 63 00 
+ 1110                 		.ascii "uint8\000"
+ 1111 00d7 75 69 6E 74 	.LASF12:
+ 1111      38 00 
+ 1112                 		.ascii "bool\000"
+ 1113 00da 62 6F 6F 6C 	.LASF55:
+ 1113      00 
+ 1114                 		.ascii "use_whitelist\000"
+ 1115 00dd 75 73 65 5F 	.LASF39:
+ 1115      77 68 69 74 
+ 1115      65 6C 69 73 
+ 1115      74 00 
+ 1116                 		.ascii "gap_mode_bond_no\000"
+ 1117 00e4 67 61 70 5F 	.LASF54:
+ 1117      6D 6F 64 65 
+ 1117      5F 62 6F 6E 
+ 1117      64 5F 6E 6F 
+ 1117      00 
+ 1118                 		.ascii "scan_type\000"
+ 1119 00ec 73 63 61 6E 	.LASF52:
+ 1119      5F 74 79 70 
+ 1119      65 00 
+ 1120                 		.ascii "scan_interval_us\000"
+ 1121 00f1 73 63 61 6E 	.LASF5:
+ 1121      5F 69 6E 74 
+ 1121      65 72 76 61 
+ 1121      6C 5F 75 73 
+ 1121      00 
+ 1122                 		.ascii "long long int\000"
+ 1123 00fa 6C 6F 6E 67 	.LASF22:
+ 1123      20 6C 6F 6E 
+ 1123      67 20 69 6E 
+ 1123      74 00 
+ 1124                 		.ascii "ls_scan_type_null\000"
+ 1125 0101 6C 73 5F 73 	.LASF24:
+ 1125      63 61 6E 5F 
+ 1125      74 79 70 65 
+ 1125      5F 6E 75 6C 
+ 1125      6C 00 
+ 1126                 		.ascii "whitelist_disabled\000"
+ 1127 010a 77 68 69 74 	.LASF3:
+ 1127      65 6C 69 73 
+ 1127      74 5F 64 69 
+ 1127      73 61 62 6C 
+ 1127      65 64 00 
+ 1128                 		.ascii "long int\000"
+ 1129 0113 6C 6F 6E 67 	.LASF70:
+ 1129      20 69 6E 74 
+ 1129      00 
+ 1130                 		.ascii "scanTimeoutHandler\000"
+ 1131 0118 73 63 61 6E 	.LASF57:
+ 1131      54 69 6D 65 
+ 1131      6F 75 74 48 
+ 1131      61 6E 64 6C 
+ 1131      65 72 00 
+ 1132                 		.ascii "CM_CENTRAL_SCAN_INFO_T\000"
+ 1133 0121 43 4D 5F 43 	.LASF48:
+ 1133      45 4E 54 52 
+ 1133      41 4C 5F 53 
+ 1133      43 41 4E 5F 
+ 1133      49 4E 46 4F 
+ 1134                 		.ascii "uuid\000"
+ 1135 012d 75 75 69 64 	.LASF35:
+ 1135      00 
+ 1136                 		.ascii "GATT_UUID16\000"
+ 1137 012f 47 41 54 54 	.LASF26:
+ 1137      5F 55 55 49 
+ 1137      44 31 36 00 
+ 1138                 		.ascii "whitelist_mode_null\000"
+ 1139 0135 77 68 69 74 	.LASF53:
+ 1139      65 6C 69 73 
+ 1139      74 5F 6D 6F 
+ 1139      64 65 5F 6E 
+ 1139      75 6C 6C 00 
+ 1140                 		.ascii "scan_window_us\000"
+ 1141 013f 73 63 61 6E 	.LASF18:
+ 1141      5F 77 69 6E 
+ 1141      64 6F 77 5F 
+ 1141      75 73 00 
+ 1142                 		.ascii "ls_addr_type_null\000"
+ 1143 0147 6C 73 5F 61 	.LASF7:
+ 1143      64 64 72 5F 
+ 1143      74 79 70 65 
+ 1143      5F 6E 75 6C 
+ 1143      6C 00 
+ 1144                 		.ascii "unsigned char\000"
+ 1145 0150 75 6E 73 69 	.LASF38:
+ 1145      67 6E 65 64 
+ 1145      20 63 68 61 
+ 1145      72 00 
+ 1146                 		.ascii "gap_mode_bond_null\000"
+ 1147 0157 67 61 70 5F 	.LASF64:
+ 1147      6D 6F 64 65 
+ 1147      5F 62 6F 6E 
+ 1147      64 5F 6E 75 
+ 1147      6C 6C 00 
+ 1148                 		.ascii "scan_timeout_tid\000"
+ 1149 0160 73 63 61 6E 	.LASF36:
+ 1149      5F 74 69 6D 
+ 1149      65 6F 75 74 
+ 1149      5F 74 69 64 
+ 1149      00 
+ 1150                 		.ascii "GATT_UUID128\000"
+ 1151 0169 47 41 54 54 	.LASF11:
+ 1151      5F 55 55 49 
+ 1151      44 31 32 38 
+ 1151      00 
+ 1152                 		.ascii "signed char\000"
+ 1153 016f 73 69 67 6E 	.LASF6:
+ 1153      65 64 20 63 
+ 1153      68 61 72 00 
+ 1154                 		.ascii "long long unsigned int\000"
+ 1155 0175 6C 6F 6E 67 	.LASF19:
+ 1155      20 6C 6F 6E 
+ 1155      67 20 75 6E 
+ 1155      73 69 67 6E 
+ 1155      65 64 20 69 
+ 1156                 		.ascii "ls_addr_type\000"
+ 1157 0181 6C 73 5F 61 	.LASF65:
+ 1157      64 64 72 5F 
+ 1157      74 79 70 65 
+ 1157      00 
+ 1158                 		.ascii "scanning_ongoing\000"
+ 1159 0187 73 63 61 6E 	.LASF0:
+ 1159      6E 69 6E 67 
+ 1159      5F 6F 6E 67 
+ 1159      6F 69 6E 67 
+ 1159      00 
+ 1160                 		.ascii "unsigned int\000"
+ 1161 0190 75 6E 73 69 	.LASF59:
+ 1161      67 6E 65 64 
+ 1161      20 69 6E 74 
+ 1161      00 
+ 1162                 		.ascii "lot_service_id\000"
+ 1163 0196 6C 6F 74 5F 	.LASF4:
+ 1163      73 65 72 76 
+ 1163      69 63 65 5F 
+ 1163      69 64 00 
+ 1164                 		.ascii "long unsigned int\000"
+ 1165 019e 6C 6F 6E 67 	.LASF2:
+ 1165      20 75 6E 73 
+ 1165      69 67 6E 65 
+ 1165      64 20 69 6E 
+ 1165      74 00 
+ 1166                 		.ascii "short unsigned int\000"
+ 1167 01a7 73 68 6F 72 	.LASF60:
+ 1167      74 20 75 6E 
+ 1167      73 69 67 6E 
+ 1167      65 64 20 69 
+ 1167      6E 74 00 
+ 1168                 		.ascii "StartScanning\000"
+ 1169 01b0 53 74 61 72 	.LASF58:
+ 1169      74 53 63 61 
+ 1169      6E 6E 69 6E 
+ 1169      67 00 
+ 1170                 		.ascii "char\000"
+ 1171 01b7 63 68 61 72 	.LASF13:
+ 1171      00 
+ 1172                 		.ascii "timer_id\000"
+ 1173 01ba 74 69 6D 65 	.LASF20:
+ 1173      72 5F 69 64 
+ 1173      00 
+ 1174                 		.ascii "ls_scan_type_passive\000"
+ 1175 01be 6C 73 5F 73 	.LASF10:
+ 1175      63 61 6E 5F 
+ 1175      74 79 70 65 
+ 1175      5F 70 61 73 
+ 1175      73 69 76 65 
+ 1176                 		.ascii "uint32\000"
+ 1177 01c9 75 69 6E 74 	.LASF45:
+ 1177      33 32 00 
+ 1178                 		.ascii "gap_mode_security_sc_authenticate\000"
+ 1179 01cc 67 61 70 5F 	.LASF21:
+ 1179      6D 6F 64 65 
+ 1179      5F 73 65 63 
+ 1179      75 72 69 74 
+ 1179      79 5F 73 63 
+ 1180                 		.ascii "ls_scan_type_active\000"
+ 1181 01dd 6C 73 5F 73 	.LASF37:
+ 1181      63 61 6E 5F 
+ 1181      74 79 70 65 
+ 1181      5F 61 63 74 
+ 1181      69 76 65 00 
+ 1182                 		.ascii "GATT_UUID_T\000"
+ 1183 01e7 47 41 54 54 	.LASF61:
+ 1183      5F 55 55 49 
+ 1183      44 5F 54 00 
+ 1184                 		.ascii "StopScanning\000"
+ 1185 01ed 53 74 6F 70 	.LASF32:
+ 1185      53 63 61 6E 
+ 1185      6E 69 6E 67 
+ 1185      00 
+ 1186                 		.ascii "whitelist_mode_conn_true\000"
+ 1187 01f4 77 68 69 74 	.LASF46:
+ 1187      65 6C 69 73 
+ 1187      74 5F 6D 6F 
+ 1187      64 65 5F 63 
+ 1187      6F 6E 6E 5F 
+ 1188                 		.ascii "gap_mode_security\000"
+ 1189 0200 67 61 70 5F 	.LASF16:
+ 1189      6D 6F 64 65 
+ 1189      5F 73 65 63 
+ 1189      75 72 69 74 
+ 1189      79 00 
+ 1190                 		.ascii "ls_addr_type_public_identity\000"
+ 1191 0209 6C 73 5F 61 	.LASF33:
+ 1191      64 64 72 5F 
+ 1191      74 79 70 65 
+ 1191      5F 70 75 62 
+ 1191      6C 69 63 5F 
+ 1192                 		.ascii "whitelist_mode\000"
+ 1193 0218 77 68 69 74 	.LASF30:
+ 1193      65 6C 69 73 
+ 1193      74 5F 6D 6F 
+ 1193      64 65 00 
+ 1194                 		.ascii "whitelist_mode_adv_true\000"
+ 1195 021f 77 68 69 74 	.LASF66:
+ 1195      65 6C 69 73 
+ 1195      74 5F 6D 6F 
+ 1195      64 65 5F 61 
+ 1195      64 76 5F 74 
+ 1196                 		.ascii "temp_uuid\000"
+ 1197 022b 74 65 6D 70 	.LASF44:
+ 1197      5F 75 75 69 
+ 1197      64 00 
+ 1198                 		.ascii "gap_mode_security_authenticate\000"
+ 1199 0230 67 61 70 5F 	.LASF15:
+ 1199      6D 6F 64 65 
+ 1199      5F 73 65 63 
+ 1199      75 72 69 74 
+ 1199      79 5F 61 75 
+ 1200                 		.ascii "ls_addr_type_random\000"
+ 1201 0240 6C 73 5F 61 	.LASF34:
+ 1201      64 64 72 5F 
+ 1201      74 79 70 65 
+ 1201      5F 72 61 6E 
+ 1201      64 6F 6D 00 
+ 1202                 		.ascii "GATT_UUID_NONE\000"
+ 1203 024a 47 41 54 54 	.LASF25:
+ 1203      5F 55 55 49 
+ 1203      44 5F 4E 4F 
+ 1203      4E 45 00 
+ 1204                 		.ascii "whitelist_enabled\000"
+ 1205 0251 77 68 69 74 	.LASF42:
+ 1205      65 6C 69 73 
+ 1205      74 5F 65 6E 
+ 1205      61 62 6C 65 
+ 1205      64 00 
+ 1206                 		.ascii "gap_mode_security_none\000"
+ 1207 025a 67 61 70 5F 	.LASF68:
+ 1207      6D 6F 64 65 
+ 1207      5F 73 65 63 
+ 1207      75 72 69 74 
+ 1207      79 5F 6E 6F 
+ 1208                 		.ascii "../mesh_common/mesh/handlers/scan/scan_handler.c\000"
+ 1209 0266 2E 2E 2F 6D 	.LASF50:
+ 1209      65 73 68 5F 
+ 1209      63 6F 6D 6D 
+ 1209      6F 6E 2F 6D 
+ 1209      65 73 68 2F 
+ 1210                 		.ascii "bond\000"
+ 1211 027e 62 6F 6E 64 	.LASF49:
+ 1211      00 
+ 1212                 		.ascii "CM_UUID_T\000"
+ 1213 0281 43 4D 5F 55 		.ident	"GCC: (GNU) 4.3.4 CSR version 31 for xap [2855778]"
+ 1213      55 49 44 5F 
+ 1213      54 00 
+ 1214                 	...

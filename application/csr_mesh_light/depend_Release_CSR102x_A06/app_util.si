@@ -1,0 +1,748 @@
+   1                 		.file	"app_util.c"
+   2                 		.variant xap2+
+   3                 	
+   4                 		.large
+   5                 	
+   6                 		.section	.debug_abbrev,"",@progbits
+   7                 	.Ldebug_abbrev0:
+   8                 		.section	.debug_info,"",@progbits
+   9                 	.Ldebug_info0:
+  10                 		.section	.debug_line,"",@progbits
+  11                 	.Ldebug_line0:
+  12 0000 00 00 00 00 		.text
+  12      00 02 00 00 
+  12      00 00 01 01 
+  12      FB 0E 0D 00 
+  12      01 01 01 01 
+  13                 	.Ltext0:
+  14                 		.section	.text.ReportPanic,"ax",@progbits
+  15                 		.global	ReportPanic
+  16                 		.type	ReportPanic, @function
+  17                 	ReportPanic:
+  18                 	.LFB2:
+  19                 		.file 1 "../mesh_common/mesh/handlers/common/app_util.c"
+   0:../mesh_common/mesh/handlers/common/app_util.c **** /******************************************************************************
+   1:../mesh_common/mesh/handlers/common/app_util.c ****  *  Copyright 2015 - 2016 Qualcomm Technologies International, Ltd.
+   2:../mesh_common/mesh/handlers/common/app_util.c ****  *  Bluetooth Low Energy CSRmesh 2.1
+   3:../mesh_common/mesh/handlers/common/app_util.c ****  *  Application version 2.1.0
+   4:../mesh_common/mesh/handlers/common/app_util.c ****  *
+   5:../mesh_common/mesh/handlers/common/app_util.c ****  *  FILE
+   6:../mesh_common/mesh/handlers/common/app_util.c ****  *      app_util.c
+   7:../mesh_common/mesh/handlers/common/app_util.c ****  *
+   8:../mesh_common/mesh/handlers/common/app_util.c ****  *
+   9:../mesh_common/mesh/handlers/common/app_util.c ****  ******************************************************************************/
+  10:../mesh_common/mesh/handlers/common/app_util.c ****  /*============================================================================*
+  11:../mesh_common/mesh/handlers/common/app_util.c ****  *  SDK Header Files
+  12:../mesh_common/mesh/handlers/common/app_util.c ****  *============================================================================*/
+  13:../mesh_common/mesh/handlers/common/app_util.c **** #include <panic.h>
+  14:../mesh_common/mesh/handlers/common/app_util.c **** /*============================================================================*
+  15:../mesh_common/mesh/handlers/common/app_util.c ****  *  Local Header Files
+  16:../mesh_common/mesh/handlers/common/app_util.c ****  *============================================================================*/
+  17:../mesh_common/mesh/handlers/common/app_util.c **** #include "user_config.h"
+  18:../mesh_common/mesh/handlers/common/app_util.c **** #include "app_util.h"
+  19:../mesh_common/mesh/handlers/common/app_util.c **** #include "core_mesh_handler.h"
+  20:../mesh_common/mesh/handlers/common/app_util.c **** #include "app_mesh_handler.h"
+  21:../mesh_common/mesh/handlers/common/app_util.c **** #include "debug.h"
+  22:../mesh_common/mesh/handlers/common/app_util.c **** /*============================================================================*
+  23:../mesh_common/mesh/handlers/common/app_util.c ****  *  Private Data
+  24:../mesh_common/mesh/handlers/common/app_util.c ****  *============================================================================*/
+  25:../mesh_common/mesh/handlers/common/app_util.c **** 
+  26:../mesh_common/mesh/handlers/common/app_util.c **** /*============================================================================*
+  27:../mesh_common/mesh/handlers/common/app_util.c ****  *  Private Function Prototypes
+  28:../mesh_common/mesh/handlers/common/app_util.c ****  *============================================================================*/
+  29:../mesh_common/mesh/handlers/common/app_util.c **** 
+  30:../mesh_common/mesh/handlers/common/app_util.c **** /*============================================================================*
+  31:../mesh_common/mesh/handlers/common/app_util.c ****  *  Private Function Definitions
+  32:../mesh_common/mesh/handlers/common/app_util.c ****  *============================================================================*/
+  33:../mesh_common/mesh/handlers/common/app_util.c **** 
+  34:../mesh_common/mesh/handlers/common/app_util.c **** /*============================================================================*
+  35:../mesh_common/mesh/handlers/common/app_util.c ****  *  Public Function Definitions
+  36:../mesh_common/mesh/handlers/common/app_util.c ****  *============================================================================*/
+  37:../mesh_common/mesh/handlers/common/app_util.c **** 
+  38:../mesh_common/mesh/handlers/common/app_util.c **** #ifdef DEBUG_ENABLE
+  39:../mesh_common/mesh/handlers/common/app_util.c **** /*----------------------------------------------------------------------------*
+  40:../mesh_common/mesh/handlers/common/app_util.c ****  *  NAME
+  41:../mesh_common/mesh/handlers/common/app_util.c ****  *      printInDecimal
+  42:../mesh_common/mesh/handlers/common/app_util.c ****  *
+  43:../mesh_common/mesh/handlers/common/app_util.c ****  *  DESCRIPTION
+  44:../mesh_common/mesh/handlers/common/app_util.c ****  *      This function prints an UNSIGNED integer in decimal.
+  45:../mesh_common/mesh/handlers/common/app_util.c ****  *
+  46:../mesh_common/mesh/handlers/common/app_util.c ****  *  RETURNS
+  47:../mesh_common/mesh/handlers/common/app_util.c ****  *      Nothing.
+  48:../mesh_common/mesh/handlers/common/app_util.c ****  *
+  49:../mesh_common/mesh/handlers/common/app_util.c ****  
+  50:../mesh_common/mesh/handlers/common/app_util.c **** *----------------------------------------------------------------------------*/
+  51:../mesh_common/mesh/handlers/common/app_util.c **** extern void PrintInDecimal(uint32 val)
+  52:../mesh_common/mesh/handlers/common/app_util.c **** {
+  53:../mesh_common/mesh/handlers/common/app_util.c ****     if(val >= 10)
+  54:../mesh_common/mesh/handlers/common/app_util.c ****     {
+  55:../mesh_common/mesh/handlers/common/app_util.c ****         PrintInDecimal(val/10);
+  56:../mesh_common/mesh/handlers/common/app_util.c ****     }
+  57:../mesh_common/mesh/handlers/common/app_util.c ****     DebugWriteChar(('0' + (val%10)));
+  58:../mesh_common/mesh/handlers/common/app_util.c **** }
+  59:../mesh_common/mesh/handlers/common/app_util.c **** #endif /* DEBUG_ENABLE */
+  60:../mesh_common/mesh/handlers/common/app_util.c **** 
+  61:../mesh_common/mesh/handlers/common/app_util.c **** /*----------------------------------------------------------------------------*
+  62:../mesh_common/mesh/handlers/common/app_util.c ****  *  NAME
+  63:../mesh_common/mesh/handlers/common/app_util.c ****  *      ReportPanic
+  64:../mesh_common/mesh/handlers/common/app_util.c ****  *
+  65:../mesh_common/mesh/handlers/common/app_util.c ****  *  DESCRIPTION
+  66:../mesh_common/mesh/handlers/common/app_util.c ****  *      This function calls firmware panic routine and gives a single point
+  67:../mesh_common/mesh/handlers/common/app_util.c ****  *      of debugging any application level panics
+  68:../mesh_common/mesh/handlers/common/app_util.c ****  *
+  69:../mesh_common/mesh/handlers/common/app_util.c ****  *  RETURNS
+  70:../mesh_common/mesh/handlers/common/app_util.c ****  *      Nothing.
+  71:../mesh_common/mesh/handlers/common/app_util.c ****  *
+  72:../mesh_common/mesh/handlers/common/app_util.c ****  *---------------------------------------------------------------------------*/
+  73:../mesh_common/mesh/handlers/common/app_util.c **** extern void ReportPanic(app_panic_code panic_code)
+  74:../mesh_common/mesh/handlers/common/app_util.c **** {
+  20                 	
+  21                 		.loc 1 77 0
+  75:../mesh_common/mesh/handlers/common/app_util.c **** e)
+  76:../mesh_common/mesh/handlers/common/app_util.c **** {
+  22                 	bra	Panic
+  23 0000 00 00 00 00 	.LVL1:
+  23      00 E0 
+  24                 	.LFE2:
+  25                 		.size	ReportPanic, .-ReportPanic
+  26                 		.global	__size_of_ReportPanic
+  27                 		.equ	__size_of_ReportPanic,. - ReportPanic
+  28                 		.comm lot_model_groups, 35, 1
+  29                 	
+  30                 		.comm extension_model_groups, 35, 1
+  31                 	
+  32                 		.comm grp_model_groups, 35, 1
+  33                 	
+  34                 		.section	.debug_frame,"",@progbits
+  35                 	.Lframe0:
+  36                 		.4byte	.LECIE0-.LSCIE0
+  37 0000 00 00 00 00 	.LSCIE0:
+  38                 		.4byte	0xffffffff
+  39 0002 FF FF FF FF 		.1byte	0x1
+  40 0004 01          		.ascii "\000"
+  41 0004 00          		.1byte	0x1
+  42 0005 01          		.1byte	0x7f
+  43 0005 7F          		.1byte	0x3
+  44 0006 03          		.1byte	0xc
+  45 0006 0C          		.1byte	0x5
+  46 0007 05          		.1byte	0x0
+  47 0007 00          		.p2align	2
+  48                 	.LECIE0:
+  49                 	.LSFDE0:
+  50                 		.4byte	.LEFDE0-.LASFDE0
+  51 0008 00 00 00 00 	.LASFDE0:
+  52                 		.4byte	.Lframe0
+  53 000a 00 00 00 00 		.4byte	.LFB2
+  54 000c 00 00 00 00 		.4byte	.LFE2-.LFB2
+  55 000e 00 00 00 00 		.p2align	2
+  56                 	.LEFDE0:
+  57                 		.text
+  58                 	.Letext0:
+  59                 		.section	.debug_loc,"",@progbits
+  60                 	.Ldebug_loc0:
+  61                 	.LLST1:
+  62                 		.4byte	.LVL0
+  63 0000 00 00 00 00 		.4byte	.LVL1
+  64 0002 00 00 00 00 		.2byte	0x1
+  65 0004 00 01       		.1byte	0x51
+  66 0005 51          		.4byte	0x0
+  67 0005 00 00 00 00 		.4byte	0x0
+  68 0007 00 00 00 00 		.file 2 "C:/CSR102x_SDK-3.1.1/tools/include/CSR102x_A06/uenergy_types.h"
+  69                 		.file 3 "../mesh_common/mesh/handlers/common/app_util.h"
+  70                 		.file 4 "./app_mesh_handler.h"
+  71                 		.section	.debug_info
+  72                 		.4byte	0x168
+  73 0000 00 00 01 68 		.2byte	0x2
+  74 0002 00 02       		.4byte	.Ldebug_abbrev0
+  75 0003 00 00 00 00 		.1byte	0x4
+  76 0005 04          		.1byte	0x1
+  77 0005 01          		.4byte	.LASF32
+  78 0006 00 00 00 00 		.1byte	0x1
+  79 0008 01          		.4byte	.LASF33
+  80 0008 00 00 00 00 		.4byte	.LASF34
+  81 000a 00 00 00 00 		.4byte	0x0
+  82 000c 00 00 00 00 		.4byte	0x0
+  83 000e 00 00 00 00 		.4byte	.Ldebug_ranges0+0x0
+  84 0010 00 00 00 00 		.4byte	.Ldebug_line0
+  85 0012 00 00 00 00 		.1byte	0x2
+  86 0014 02          		.1byte	0x2
+  87 0015 02          		.1byte	0x5
+  88 0015 05          		.ascii "int\000"
+  89 0016 69 6E 74 00 		.1byte	0x3
+  90 0018 03          		.1byte	0x2
+  91 0018 02          		.1byte	0x7
+  92 0019 07          		.4byte	.LASF0
+  93 0019 00 00 00 00 		.1byte	0x3
+  94 001b 03          		.1byte	0x2
+  95 001c 02          		.1byte	0x5
+  96 001c 05          		.4byte	.LASF1
+  97 001d 00 00 00 00 		.1byte	0x3
+  98 001f 03          		.1byte	0x2
+  99 001f 02          		.1byte	0x7
+ 100 0020 07          		.4byte	.LASF2
+ 101 0020 00 00 00 00 		.1byte	0x3
+ 102 0022 03          		.1byte	0x4
+ 103 0023 04          		.1byte	0x5
+ 104 0023 05          		.4byte	.LASF3
+ 105 0024 00 00 00 00 		.1byte	0x3
+ 106 0026 03          		.1byte	0x4
+ 107 0026 04          		.1byte	0x7
+ 108 0027 07          		.4byte	.LASF4
+ 109 0027 00 00 00 00 		.1byte	0x3
+ 110 0029 03          		.1byte	0x8
+ 111 002a 08          		.1byte	0x5
+ 112 002a 05          		.4byte	.LASF5
+ 113 002b 00 00 00 00 		.1byte	0x3
+ 114 002d 03          		.1byte	0x8
+ 115 002d 08          		.1byte	0x7
+ 116 002e 07          		.4byte	.LASF6
+ 117 002e 00 00 00 00 		.1byte	0x3
+ 118 0030 03          		.1byte	0x2
+ 119 0031 02          		.1byte	0x8
+ 120 0031 08          		.4byte	.LASF7
+ 121 0032 00 00 00 00 		.1byte	0x4
+ 122 0034 04          		.4byte	.LASF26
+ 123 0034 00 00 00 00 		.1byte	0x2
+ 124 0036 02          		.1byte	0x24
+ 125 0037 24          		.4byte	0x3e
+ 126 0037 00 00 00 3E 		.1byte	0x3
+ 127 0039 03          		.1byte	0x2
+ 128 003a 02          		.1byte	0x6
+ 129 003a 06          		.4byte	.LASF8
+ 130 003b 00 00 00 00 		.1byte	0x5
+ 131 003d 05          		.1byte	0x2
+ 132 003d 02          		.1byte	0x7
+ 133 003e 07          		.1byte	0x6
+ 134 003e 06          		.1byte	0x2
+ 135 003f 02          		.1byte	0x3
+ 136 003f 03          		.1byte	0x17
+ 137 0040 17          		.4byte	0xec
+ 138 0040 00 00 00 EC 		.1byte	0x7
+ 139 0042 07          		.4byte	.LASF9
+ 140 0043 00 00 00 00 		.1byte	0x1
+ 141 0045 01          		.1byte	0x7
+ 142 0045 07          		.4byte	.LASF10
+ 143 0046 00 00 00 00 		.1byte	0x2
+ 144 0048 02          		.1byte	0x7
+ 145 0048 07          		.4byte	.LASF11
+ 146 0049 00 00 00 00 		.1byte	0x3
+ 147 004b 03          		.1byte	0x7
+ 148 004b 07          		.4byte	.LASF12
+ 149 004c 00 00 00 00 		.1byte	0x4
+ 150 004e 04          		.1byte	0x7
+ 151 004e 07          		.4byte	.LASF13
+ 152 004f 00 00 00 00 		.1byte	0x5
+ 153 0051 05          		.1byte	0x7
+ 154 0051 07          		.4byte	.LASF14
+ 155 0052 00 00 00 00 		.1byte	0x6
+ 156 0054 06          		.1byte	0x7
+ 157 0054 07          		.4byte	.LASF15
+ 158 0055 00 00 00 00 		.1byte	0x7
+ 159 0057 07          		.1byte	0x7
+ 160 0057 07          		.4byte	.LASF16
+ 161 0058 00 00 00 00 		.1byte	0x8
+ 162 005a 08          		.1byte	0x7
+ 163 005a 07          		.4byte	.LASF17
+ 164 005b 00 00 00 00 		.1byte	0x9
+ 165 005d 09          		.1byte	0x7
+ 166 005d 07          		.4byte	.LASF18
+ 167 005e 00 00 00 00 		.1byte	0xa
+ 168 0060 0A          		.1byte	0x7
+ 169 0060 07          		.4byte	.LASF19
+ 170 0061 00 00 00 00 		.1byte	0xb
+ 171 0063 0B          		.1byte	0x7
+ 172 0063 07          		.4byte	.LASF20
+ 173 0064 00 00 00 00 		.1byte	0xc
+ 174 0066 0C          		.1byte	0x7
+ 175 0066 07          		.4byte	.LASF21
+ 176 0067 00 00 00 00 		.1byte	0xd
+ 177 0069 0D          		.1byte	0x7
+ 178 0069 07          		.4byte	.LASF22
+ 179 006a 00 00 00 00 		.1byte	0xe
+ 180 006c 0E          		.1byte	0x7
+ 181 006c 07          		.4byte	.LASF23
+ 182 006d 00 00 00 00 		.1byte	0xf
+ 183 006f 0F          		.1byte	0x7
+ 184 006f 07          		.4byte	.LASF24
+ 185 0070 00 00 00 00 		.1byte	0x10
+ 186 0072 10          		.1byte	0x7
+ 187 0072 07          		.4byte	.LASF25
+ 188 0073 00 00 00 00 		.1byte	0x11
+ 189 0075 11          		.1byte	0x0
+ 190 0075 00          		.1byte	0x4
+ 191 0076 04          		.4byte	.LASF27
+ 192 0076 00 00 00 00 		.1byte	0x3
+ 193 0078 03          		.1byte	0x4b
+ 194 0079 4B          		.4byte	0x7d
+ 195 0079 00 00 00 7D 		.1byte	0x3
+ 196 007b 03          		.1byte	0x2
+ 197 007c 02          		.1byte	0x8
+ 198 007c 08          		.4byte	.LASF28
+ 199 007d 00 00 00 00 		.1byte	0x8
+ 200 007f 08          		.1byte	0x1
+ 201 007f 01          		.4byte	.LASF35
+ 202 0080 00 00 00 00 		.1byte	0x1
+ 203 0082 01          		.1byte	0x4b
+ 204 0082 4B          		.1byte	0x1
+ 205 0083 01          		.4byte	.LFB2
+ 206 0083 00 00 00 00 		.4byte	.LFE2
+ 207 0085 00 00 00 00 		.1byte	0x1
+ 208 0087 01          		.1byte	0x55
+ 209 0088 55          		.4byte	0x125
+ 210 0088 00 00 01 25 		.1byte	0x9
+ 211 008a 09          		.4byte	.LASF36
+ 212 008b 00 00 00 00 		.1byte	0x1
+ 213 008d 01          		.1byte	0x4a
+ 214 008d 4A          		.4byte	0xec
+ 215 008e 00 00 00 EC 		.4byte	.LLST1
+ 216 0090 00 00 00 00 		.1byte	0x0
+ 217 0092 00          		.1byte	0xa
+ 218 0092 0A          		.4byte	0x68
+ 219 0093 00 00 00 68 		.4byte	0x135
+ 220 0095 00 00 01 35 		.1byte	0xb
+ 221 0097 0B          		.4byte	0x7a
+ 222 0097 00 00 00 7A 		.1byte	0x22
+ 223 0099 22          		.1byte	0x0
+ 224 009a 00          		.1byte	0xc
+ 225 009a 0C          		.4byte	.LASF29
+ 226 009b 00 00 00 00 		.1byte	0x4
+ 227 009d 04          		.1byte	0x1a
+ 228 009d 1A          		.4byte	0x125
+ 229 009e 00 00 01 25 		.1byte	0x1
+ 230 00a0 01          		.1byte	0x5
+ 231 00a0 05          		.1byte	0x3
+ 232 00a1 03          		.4byte	lot_model_groups
+ 233 00a1 00 00 00 00 		.1byte	0xc
+ 234 00a3 0C          		.4byte	.LASF30
+ 235 00a4 00 00 00 00 		.1byte	0x4
+ 236 00a6 04          		.1byte	0x1b
+ 237 00a6 1B          		.4byte	0x125
+ 238 00a7 00 00 01 25 		.1byte	0x1
+ 239 00a9 01          		.1byte	0x5
+ 240 00a9 05          		.1byte	0x3
+ 241 00aa 03          		.4byte	extension_model_groups
+ 242 00aa 00 00 00 00 		.1byte	0xc
+ 243 00ac 0C          		.4byte	.LASF31
+ 244 00ad 00 00 00 00 		.1byte	0x4
+ 245 00af 04          		.1byte	0x1c
+ 246 00af 1C          		.4byte	0x125
+ 247 00b0 00 00 01 25 		.1byte	0x1
+ 248 00b2 01          		.1byte	0x5
+ 249 00b2 05          		.1byte	0x3
+ 250 00b3 03          		.4byte	grp_model_groups
+ 251 00b3 00 00 00 00 		.1byte	0x0
+ 252 00b5 00          		.section	.debug_abbrev
+ 253                 		.1byte	0x1
+ 254 0000 01          		.1byte	0x11
+ 255 0000 11          		.1byte	0x1
+ 256 0001 01          		.1byte	0x25
+ 257 0001 25          		.1byte	0xe
+ 258 0002 0E          		.1byte	0x13
+ 259 0002 13          		.1byte	0xb
+ 260 0003 0B          		.1byte	0x3
+ 261 0003 03          		.1byte	0xe
+ 262 0004 0E          		.1byte	0x1b
+ 263 0004 1B          		.1byte	0xe
+ 264 0005 0E          		.1byte	0x11
+ 265 0005 11          		.1byte	0x1
+ 266 0006 01          		.1byte	0x52
+ 267 0006 52          		.1byte	0x1
+ 268 0007 01          		.1byte	0x55
+ 269 0007 55          		.1byte	0x6
+ 270 0008 06          		.1byte	0x10
+ 271 0008 10          		.1byte	0x6
+ 272 0009 06          		.1byte	0x0
+ 273 0009 00          		.1byte	0x0
+ 274 000a 00          		.1byte	0x2
+ 275 000a 02          		.1byte	0x24
+ 276 000b 24          		.1byte	0x0
+ 277 000b 00          		.1byte	0xb
+ 278 000c 0B          		.1byte	0xb
+ 279 000c 0B          		.1byte	0x3e
+ 280 000d 3E          		.1byte	0xb
+ 281 000d 0B          		.1byte	0x3
+ 282 000e 03          		.1byte	0x8
+ 283 000e 08          		.1byte	0x0
+ 284 000f 00          		.1byte	0x0
+ 285 000f 00          		.1byte	0x3
+ 286 0010 03          		.1byte	0x24
+ 287 0010 24          		.1byte	0x0
+ 288 0011 00          		.1byte	0xb
+ 289 0011 0B          		.1byte	0xb
+ 290 0012 0B          		.1byte	0x3e
+ 291 0012 3E          		.1byte	0xb
+ 292 0013 0B          		.1byte	0x3
+ 293 0013 03          		.1byte	0xe
+ 294 0014 0E          		.1byte	0x0
+ 295 0014 00          		.1byte	0x0
+ 296 0015 00          		.1byte	0x4
+ 297 0015 04          		.1byte	0x16
+ 298 0016 16          		.1byte	0x0
+ 299 0016 00          		.1byte	0x3
+ 300 0017 03          		.1byte	0xe
+ 301 0017 0E          		.1byte	0x3a
+ 302 0018 3A          		.1byte	0xb
+ 303 0018 0B          		.1byte	0x3b
+ 304 0019 3B          		.1byte	0xb
+ 305 0019 0B          		.1byte	0x49
+ 306 001a 49          		.1byte	0x13
+ 307 001a 13          		.1byte	0x0
+ 308 001b 00          		.1byte	0x0
+ 309 001b 00          		.1byte	0x5
+ 310 001c 05          		.1byte	0x24
+ 311 001c 24          		.1byte	0x0
+ 312 001d 00          		.1byte	0xb
+ 313 001d 0B          		.1byte	0xb
+ 314 001e 0B          		.1byte	0x3e
+ 315 001e 3E          		.1byte	0xb
+ 316 001f 0B          		.1byte	0x0
+ 317 001f 00          		.1byte	0x0
+ 318 0020 00          		.1byte	0x6
+ 319 0020 06          		.1byte	0x4
+ 320 0021 04          		.1byte	0x1
+ 321 0021 01          		.1byte	0xb
+ 322 0022 0B          		.1byte	0xb
+ 323 0022 0B          		.1byte	0x3a
+ 324 0023 3A          		.1byte	0xb
+ 325 0023 0B          		.1byte	0x3b
+ 326 0024 3B          		.1byte	0xb
+ 327 0024 0B          		.1byte	0x1
+ 328 0025 01          		.1byte	0x13
+ 329 0025 13          		.1byte	0x0
+ 330 0026 00          		.1byte	0x0
+ 331 0026 00          		.1byte	0x7
+ 332 0027 07          		.1byte	0x28
+ 333 0027 28          		.1byte	0x0
+ 334 0028 00          		.1byte	0x3
+ 335 0028 03          		.1byte	0xe
+ 336 0029 0E          		.1byte	0x1c
+ 337 0029 1C          		.1byte	0xd
+ 338 002a 0D          		.1byte	0x0
+ 339 002a 00          		.1byte	0x0
+ 340 002b 00          		.1byte	0x8
+ 341 002b 08          		.1byte	0x2e
+ 342 002c 2E          		.1byte	0x1
+ 343 002c 01          		.1byte	0x3f
+ 344 002d 3F          		.1byte	0xc
+ 345 002d 0C          		.1byte	0x3
+ 346 002e 03          		.1byte	0xe
+ 347 002e 0E          		.1byte	0x3a
+ 348 002f 3A          		.1byte	0xb
+ 349 002f 0B          		.1byte	0x3b
+ 350 0030 3B          		.1byte	0xb
+ 351 0030 0B          		.1byte	0x27
+ 352 0031 27          		.1byte	0xc
+ 353 0031 0C          		.1byte	0x11
+ 354 0032 11          		.1byte	0x1
+ 355 0032 01          		.1byte	0x12
+ 356 0033 12          		.1byte	0x1
+ 357 0033 01          		.1byte	0x40
+ 358 0034 40          		.1byte	0xa
+ 359 0034 0A          		.1byte	0x1
+ 360 0035 01          		.1byte	0x13
+ 361 0035 13          		.1byte	0x0
+ 362 0036 00          		.1byte	0x0
+ 363 0036 00          		.1byte	0x9
+ 364 0037 09          		.1byte	0x5
+ 365 0037 05          		.1byte	0x0
+ 366 0038 00          		.1byte	0x3
+ 367 0038 03          		.1byte	0xe
+ 368 0039 0E          		.1byte	0x3a
+ 369 0039 3A          		.1byte	0xb
+ 370 003a 0B          		.1byte	0x3b
+ 371 003a 3B          		.1byte	0xb
+ 372 003b 0B          		.1byte	0x49
+ 373 003b 49          		.1byte	0x13
+ 374 003c 13          		.1byte	0x2
+ 375 003c 02          		.1byte	0x6
+ 376 003d 06          		.1byte	0x0
+ 377 003d 00          		.1byte	0x0
+ 378 003e 00          		.1byte	0xa
+ 379 003e 0A          		.1byte	0x1
+ 380 003f 01          		.1byte	0x1
+ 381 003f 01          		.1byte	0x49
+ 382 0040 49          		.1byte	0x13
+ 383 0040 13          		.1byte	0x1
+ 384 0041 01          		.1byte	0x13
+ 385 0041 13          		.1byte	0x0
+ 386 0042 00          		.1byte	0x0
+ 387 0042 00          		.1byte	0xb
+ 388 0043 0B          		.1byte	0x21
+ 389 0043 21          		.1byte	0x0
+ 390 0044 00          		.1byte	0x49
+ 391 0044 49          		.1byte	0x13
+ 392 0045 13          		.1byte	0x2f
+ 393 0045 2F          		.1byte	0xb
+ 394 0046 0B          		.1byte	0x0
+ 395 0046 00          		.1byte	0x0
+ 396 0047 00          		.1byte	0xc
+ 397 0047 0C          		.1byte	0x34
+ 398 0048 34          		.1byte	0x0
+ 399 0048 00          		.1byte	0x3
+ 400 0049 03          		.1byte	0xe
+ 401 0049 0E          		.1byte	0x3a
+ 402 004a 3A          		.1byte	0xb
+ 403 004a 0B          		.1byte	0x3b
+ 404 004b 3B          		.1byte	0xb
+ 405 004b 0B          		.1byte	0x49
+ 406 004c 49          		.1byte	0x13
+ 407 004c 13          		.1byte	0x3f
+ 408 004d 3F          		.1byte	0xc
+ 409 004d 0C          		.1byte	0x2
+ 410 004e 02          		.1byte	0xa
+ 411 004e 0A          		.1byte	0x0
+ 412 004f 00          		.1byte	0x0
+ 413 004f 00          		.1byte	0x0
+ 414 0050 00          		.section	.debug_pubnames,"",@progbits
+ 415                 		.4byte	0x63
+ 416 0000 00 00 00 63 		.2byte	0x2
+ 417 0002 00 02       		.4byte	.Ldebug_info0
+ 418 0003 00 00 00 00 		.4byte	0x16c
+ 419 0005 00 00 01 6C 		.4byte	0xfe
+ 420 0007 00 00 00 FE 		.ascii "ReportPanic\000"
+ 421 0009 52 65 70 6F 		.4byte	0x135
+ 421      72 74 50 61 
+ 421      6E 69 63 00 
+ 422 000f 00 00 01 35 		.ascii "lot_model_groups\000"
+ 423 0011 6C 6F 74 5F 		.4byte	0x147
+ 423      6D 6F 64 65 
+ 423      6C 5F 67 72 
+ 423      6F 75 70 73 
+ 423      00 
+ 424 0019 00 00 01 47 		.ascii "extension_model_groups\000"
+ 425 001b 65 78 74 65 		.4byte	0x159
+ 425      6E 73 69 6F 
+ 425      6E 5F 6D 6F 
+ 425      64 65 6C 5F 
+ 425      67 72 6F 75 
+ 426 0027 00 00 01 59 		.ascii "grp_model_groups\000"
+ 427 0029 67 72 70 5F 		.4byte	0x0
+ 427      6D 6F 64 65 
+ 427      6C 5F 67 72 
+ 427      6F 75 70 73 
+ 427      00 
+ 428 0031 00 00 00 00 		.section	.debug_aranges,"",@progbits
+ 429                 		.4byte	0x1c
+ 430 0000 00 00 00 1C 		.2byte	0x2
+ 431 0002 00 02       		.4byte	.Ldebug_info0
+ 432 0003 00 00 00 00 		.1byte	0x4
+ 433 0005 04          		.1byte	0x0
+ 434 0005 00          		.2byte	0x0
+ 435 0006 00 00       		.2byte	0x0
+ 436 0007 00 00       		.4byte	.LFB2
+ 437 0008 00 00 00 00 		.4byte	.LFE2-.LFB2
+ 438 000a 00 00 00 00 		.4byte	0x0
+ 439 000c 00 00 00 00 		.4byte	0x0
+ 440 000e 00 00 00 00 		.section	.debug_ranges,"",@progbits
+ 441                 	.Ldebug_ranges0:
+ 442                 		.4byte	.Ltext0
+ 443 0000 00 00 00 00 		.4byte	.Letext0
+ 444 0002 00 00 00 00 		.4byte	.LFB2
+ 445 0004 00 00 00 00 		.4byte	.LFE2
+ 446 0006 00 00 00 00 		.4byte	0x0
+ 447 0008 00 00 00 00 		.4byte	0x0
+ 448 000a 00 00 00 00 		.section	.debug_str,"MS",@progbits,1
+ 449                 	.LASF21:
+ 450                 		.ascii "app_panic_unexpected_beep_type\000"
+ 451 0000 61 70 70 5F 	.LASF18:
+ 451      70 61 6E 69 
+ 451      63 5F 75 6E 
+ 451      65 78 70 65 
+ 451      63 74 65 64 
+ 452                 		.ascii "app_panic_add_whitelist\000"
+ 453 000f 61 70 70 5F 	.LASF33:
+ 453      70 61 6E 69 
+ 453      63 5F 61 64 
+ 453      64 5F 77 68 
+ 453      69 74 65 6C 
+ 454                 		.ascii "../mesh_common/mesh/handlers/common/app_util.c\000"
+ 455 001b 2E 2E 2F 6D 	.LASF32:
+ 455      65 73 68 5F 
+ 455      63 6F 6D 6D 
+ 455      6F 6E 2F 6D 
+ 455      65 73 68 2F 
+ 456                 		.ascii "GNU C 4.3.4 CSR version 31 for xap [2855778]\000"
+ 457 0033 47 4E 55 20 	.LASF19:
+ 457      43 20 34 2E 
+ 457      33 2E 34 20 
+ 457      43 53 52 20 
+ 457      76 65 72 73 
+ 458                 		.ascii "app_panic_con_param_update\000"
+ 459 0049 61 70 70 5F 	.LASF27:
+ 459      70 61 6E 69 
+ 459      63 5F 63 6F 
+ 459      6E 5F 70 61 
+ 459      72 61 6D 5F 
+ 460                 		.ascii "app_panic_code\000"
+ 461 0057 61 70 70 5F 	.LASF15:
+ 461      70 61 6E 69 
+ 461      63 5F 63 6F 
+ 461      64 65 00 
+ 462                 		.ascii "app_panic_nvm_write\000"
+ 463 005e 61 70 70 5F 	.LASF30:
+ 463      70 61 6E 69 
+ 463      63 5F 6E 76 
+ 463      6D 5F 77 72 
+ 463      69 74 65 00 
+ 464                 		.ascii "extension_model_groups\000"
+ 465 0068 65 78 74 65 	.LASF7:
+ 465      6E 73 69 6F 
+ 465      6E 5F 6D 6F 
+ 465      64 65 6C 5F 
+ 465      67 72 6F 75 
+ 466                 		.ascii "unsigned char\000"
+ 467 0074 75 6E 73 69 	.LASF23:
+ 467      67 6E 65 64 
+ 467      20 63 68 61 
+ 467      72 00 
+ 468                 		.ascii "app_panic_uuid_not_supported\000"
+ 469 007b 61 70 70 5F 	.LASF4:
+ 469      70 61 6E 69 
+ 469      63 5F 75 75 
+ 469      69 64 5F 6E 
+ 469      6F 74 5F 73 
+ 470                 		.ascii "long unsigned int\000"
+ 471 0089 6C 6F 6E 67 	.LASF2:
+ 471      20 75 6E 73 
+ 471      69 67 6E 65 
+ 471      64 20 69 6E 
+ 471      74 00 
+ 472                 		.ascii "short unsigned int\000"
+ 473 0092 73 68 6F 72 	.LASF35:
+ 473      74 20 75 6E 
+ 473      73 69 67 6E 
+ 473      65 64 20 69 
+ 473      6E 74 00 
+ 474                 		.ascii "ReportPanic\000"
+ 475 009c 52 65 70 6F 	.LASF20:
+ 475      72 74 50 61 
+ 475      6E 69 63 00 
+ 476                 		.ascii "app_panic_invalid_state\000"
+ 477 00a2 61 70 70 5F 	.LASF22:
+ 477      70 61 6E 69 
+ 477      63 5F 69 6E 
+ 477      76 61 6C 69 
+ 477      64 5F 73 74 
+ 478                 		.ascii "app_panic_gap_set_mode\000"
+ 479 00ae 61 70 70 5F 	.LASF24:
+ 479      70 61 6E 69 
+ 479      63 5F 67 61 
+ 479      70 5F 73 65 
+ 479      74 5F 6D 6F 
+ 480                 		.ascii "app_panic_set_scan_params\000"
+ 481 00b9 61 70 70 5F 	.LASF16:
+ 481      70 61 6E 69 
+ 481      63 5F 73 65 
+ 481      74 5F 73 63 
+ 481      61 6E 5F 70 
+ 482                 		.ascii "app_panic_read_tx_pwr_level\000"
+ 483 00c6 61 70 70 5F 	.LASF26:
+ 483      70 61 6E 69 
+ 483      63 5F 72 65 
+ 483      61 64 5F 74 
+ 483      78 5F 70 77 
+ 484                 		.ascii "uint16\000"
+ 485 00d4 75 69 6E 74 	.LASF36:
+ 485      31 36 00 
+ 486                 		.ascii "panic_code\000"
+ 487 00d8 70 61 6E 69 	.LASF0:
+ 487      63 5F 63 6F 
+ 487      64 65 00 
+ 488                 		.ascii "unsigned int\000"
+ 489 00dd 75 6E 73 69 	.LASF25:
+ 489      67 6E 65 64 
+ 489      20 69 6E 74 
+ 489      00 
+ 490                 		.ascii "app_panic_nvm_erase\000"
+ 491 00e4 61 70 70 5F 	.LASF11:
+ 491      70 61 6E 69 
+ 491      63 5F 6E 76 
+ 491      6D 5F 65 72 
+ 491      61 73 65 00 
+ 492                 		.ascii "app_panic_set_scan_rsp_data\000"
+ 493 00ee 61 70 70 5F 	.LASF13:
+ 493      70 61 6E 69 
+ 493      63 5F 73 65 
+ 493      74 5F 73 63 
+ 493      61 6E 5F 72 
+ 494                 		.ascii "app_panic_db_registration\000"
+ 495 00fc 61 70 70 5F 	.LASF6:
+ 495      70 61 6E 69 
+ 495      63 5F 64 62 
+ 495      5F 72 65 67 
+ 495      69 73 74 72 
+ 496                 		.ascii "long long unsigned int\000"
+ 497 0109 6C 6F 6E 67 	.LASF9:
+ 497      20 6C 6F 6E 
+ 497      67 20 75 6E 
+ 497      73 69 67 6E 
+ 497      65 64 20 69 
+ 498                 		.ascii "app_panic_set_advert_params\000"
+ 499 0114 61 70 70 5F 	.LASF10:
+ 499      70 61 6E 69 
+ 499      63 5F 73 65 
+ 499      74 5F 61 64 
+ 499      76 65 72 74 
+ 500                 		.ascii "app_panic_set_advert_data\000"
+ 501 0122 61 70 70 5F 	.LASF5:
+ 501      70 61 6E 69 
+ 501      63 5F 73 65 
+ 501      74 5F 61 64 
+ 501      76 65 72 74 
+ 502                 		.ascii "long long int\000"
+ 503 012f 6C 6F 6E 67 	.LASF28:
+ 503      20 6C 6F 6E 
+ 503      67 20 69 6E 
+ 503      74 00 
+ 504                 		.ascii "char\000"
+ 505 0136 63 68 61 72 	.LASF12:
+ 505      00 
+ 506                 		.ascii "app_panic_connection_est\000"
+ 507 0139 61 70 70 5F 	.LASF1:
+ 507      70 61 6E 69 
+ 507      63 5F 63 6F 
+ 507      6E 6E 65 63 
+ 507      74 69 6F 6E 
+ 508                 		.ascii "short int\000"
+ 509 0145 73 68 6F 72 	.LASF29:
+ 509      74 20 69 6E 
+ 509      74 00 
+ 510                 		.ascii "lot_model_groups\000"
+ 511 014a 6C 6F 74 5F 	.LASF31:
+ 511      6D 6F 64 65 
+ 511      6C 5F 67 72 
+ 511      6F 75 70 73 
+ 511      00 
+ 512                 		.ascii "grp_model_groups\000"
+ 513 0153 67 72 70 5F 	.LASF3:
+ 513      6D 6F 64 65 
+ 513      6C 5F 67 72 
+ 513      6F 75 70 73 
+ 513      00 
+ 514                 		.ascii "long int\000"
+ 515 015b 6C 6F 6E 67 	.LASF34:
+ 515      20 69 6E 74 
+ 515      00 
+ 516                 		.ascii "C:\\Users\\Admin\\Downloads\\UNIS\\1024_Uart_rev0.3\\application\\csr_mesh_light\000"
+ 517 0160 43 3A 5C 55 	.LASF17:
+ 517      73 65 72 73 
+ 517      5C 41 64 6D 
+ 517      69 6E 5C 44 
+ 517      6F 77 6E 6C 
+ 518                 		.ascii "app_panic_delete_whitelist\000"
+ 519 0185 61 70 70 5F 	.LASF8:
+ 519      70 61 6E 69 
+ 519      63 5F 64 65 
+ 519      6C 65 74 65 
+ 519      5F 77 68 69 
+ 520                 		.ascii "signed char\000"
+ 521 0192 73 69 67 6E 	.LASF14:
+ 521      65 64 20 63 
+ 521      68 61 72 00 
+ 522                 		.ascii "app_panic_nvm_read\000"
+ 523 0198 61 70 70 5F 		.ident	"GCC: (GNU) 4.3.4 CSR version 31 for xap [2855778]"
+ 523      70 61 6E 69 
+ 523      63 5F 6E 76 
+ 523      6D 5F 72 65 
+ 523      61 64 00 
+ 524                 	...

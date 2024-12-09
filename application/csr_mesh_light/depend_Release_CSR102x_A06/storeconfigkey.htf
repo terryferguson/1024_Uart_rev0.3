@@ -1,0 +1,25 @@
+subsystem = ble
+device = SMEM
+store = 15
+
+# wd_timeout
+wd_timeout = 0x927c
+
+# app_store_id
+app_store_id = {1, 0x00, 0x00}
+
+# sosc_recalibration
+sosc_recalibration = {0x03, 0x93a80}
+
+# sleep_fosc_freq
+sleep_fosc_freq = 0x04
+
+# fosc_recalibration
+fosc_recalibration = {0x5, 0x93a80}
+
+# fosc_freq_delta
+fosc_freq_delta = 250
+
+# cache_mode
+cache_mode = 0x04
+

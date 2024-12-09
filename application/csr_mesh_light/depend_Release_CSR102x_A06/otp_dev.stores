@@ -1,0 +1,8 @@
+# Store Configuration File
+#
+# Configuration of stores for an application in OTP memory
+#
+#
+#COMMENT,MEMORY,TYPE,ID,STORE_SIZE,CACHED,CONTENT,OPTIONS
+Configuration,OTP,CONF,32801,512,No,<Dev>,
+Firmware,OTP,FW,45057,736,No,<Dev>,build_id=0x710

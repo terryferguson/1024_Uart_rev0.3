@@ -1,0 +1,359 @@
+   1                 		.file	"largeobjecttransfer_model_handler.c"
+   2                 		.variant xap2+
+   3                 	
+   4                 		.large
+   5                 	
+   6                 		.section	.debug_abbrev,"",@progbits
+   7                 	.Ldebug_abbrev0:
+   8                 		.section	.debug_info,"",@progbits
+   9                 	.Ldebug_info0:
+  10                 		.section	.debug_line,"",@progbits
+  11                 	.Ldebug_line0:
+  12 0000 00 00 00 00 		.text
+  12      00 02 00 00 
+  12      00 00 01 01 
+  12      FB 0E 0D 00 
+  12      01 01 01 01 
+  13                 	.Ltext0:
+  14                 		.comm g_app_nvm_offset, 1, 1
+  15                 	
+  16                 		.comm g_app_nvm_fresh, 1, 1
+  17                 	
+  18                 		.comm g_cskey_flags, 1, 1
+  19                 	
+  20                 		.comm scanning_ongoing, 1, 1
+  21                 	
+  22                 	.Letext0:
+  23                 		.file 1 "C:/CSR102x_SDK-3.1.1/tools/include/CSR102x_A06/uenergy_types.h"
+  24                 		.file 2 "./main_app.h"
+  25                 		.file 3 "../mesh_common/mesh/handlers/otau_client/app_otau_client_handler.h"
+  26                 		.section	.debug_info
+  27 0000 00 00 00 D3 		.4byte	0xd3
+  28 0002 00 02       		.2byte	0x2
+  29 0003 00 00 00 00 		.4byte	.Ldebug_abbrev0
+  30 0005 04          		.1byte	0x4
+  31 0005 01          		.1byte	0x1
+  32 0006 00 00 00 00 		.4byte	.LASF16
+  33 0008 01          		.1byte	0x1
+  34 0008 00 00 00 00 		.4byte	.LASF17
+  35 000a 00 00 00 00 		.4byte	.LASF18
+  36 000c 00 00 00 00 		.4byte	.Ltext0
+  37 000e 00 00 00 00 		.4byte	.Letext0
+  38 0010 00 00 00 00 		.4byte	.Ldebug_line0
+  39 0012 02          		.1byte	0x2
+  40 0013 02          		.1byte	0x2
+  41 0013 05          		.1byte	0x5
+  42 0014 69 6E 74 00 		.ascii "int\000"
+  43 0016 03          		.1byte	0x3
+  44 0016 02          		.1byte	0x2
+  45 0017 07          		.1byte	0x7
+  46 0017 00 00 00 00 		.4byte	.LASF0
+  47 0019 03          		.1byte	0x3
+  48 001a 02          		.1byte	0x2
+  49 001a 05          		.1byte	0x5
+  50 001b 00 00 00 00 		.4byte	.LASF1
+  51 001d 03          		.1byte	0x3
+  52 001d 02          		.1byte	0x2
+  53 001e 07          		.1byte	0x7
+  54 001e 00 00 00 00 		.4byte	.LASF2
+  55 0020 03          		.1byte	0x3
+  56 0021 04          		.1byte	0x4
+  57 0021 05          		.1byte	0x5
+  58 0022 00 00 00 00 		.4byte	.LASF3
+  59 0024 03          		.1byte	0x3
+  60 0024 04          		.1byte	0x4
+  61 0025 07          		.1byte	0x7
+  62 0025 00 00 00 00 		.4byte	.LASF4
+  63 0027 03          		.1byte	0x3
+  64 0028 08          		.1byte	0x8
+  65 0028 05          		.1byte	0x5
+  66 0029 00 00 00 00 		.4byte	.LASF5
+  67 002b 03          		.1byte	0x3
+  68 002b 08          		.1byte	0x8
+  69 002c 07          		.1byte	0x7
+  70 002c 00 00 00 00 		.4byte	.LASF6
+  71 002e 03          		.1byte	0x3
+  72 002f 02          		.1byte	0x2
+  73 002f 08          		.1byte	0x8
+  74 0030 00 00 00 00 		.4byte	.LASF7
+  75 0032 04          		.1byte	0x4
+  76 0032 00 00 00 00 		.4byte	.LASF9
+  77 0034 01          		.1byte	0x1
+  78 0035 24          		.1byte	0x24
+  79 0035 00 00 00 3A 		.4byte	0x3a
+  80 0037 03          		.1byte	0x3
+  81 0038 02          		.1byte	0x2
+  82 0038 06          		.1byte	0x6
+  83 0039 00 00 00 00 		.4byte	.LASF8
+  84 003b 04          		.1byte	0x4
+  85 003b 00 00 00 00 		.4byte	.LASF10
+  86 003d 01          		.1byte	0x1
+  87 003e 36          		.1byte	0x36
+  88 003e 00 00 00 2C 		.4byte	0x2c
+  89 0040 05          		.1byte	0x5
+  90 0041 02          		.1byte	0x2
+  91 0041 07          		.1byte	0x7
+  92 0042 03          		.1byte	0x3
+  93 0042 02          		.1byte	0x2
+  94 0043 08          		.1byte	0x8
+  95 0043 00 00 00 00 		.4byte	.LASF11
+  96 0045 06          		.1byte	0x6
+  97 0046 00 00 00 00 		.4byte	.LASF12
+  98 0048 02          		.1byte	0x2
+  99 0048 01 E2       		.2byte	0x1e2
+ 100 0049 00 00 00 64 		.4byte	0x64
+ 101 004b 01          		.1byte	0x1
+ 102 004c 05          		.1byte	0x5
+ 103 004c 03          		.1byte	0x3
+ 104 004d 00 00 00 00 		.4byte	g_app_nvm_offset
+ 105 004f 06          		.1byte	0x6
+ 106 004f 00 00 00 00 		.4byte	.LASF13
+ 107 0051 02          		.1byte	0x2
+ 108 0052 01 E3       		.2byte	0x1e3
+ 109 0053 00 00 00 76 		.4byte	0x76
+ 110 0055 01          		.1byte	0x1
+ 111 0055 05          		.1byte	0x5
+ 112 0056 03          		.1byte	0x3
+ 113 0056 00 00 00 00 		.4byte	g_app_nvm_fresh
+ 114 0058 06          		.1byte	0x6
+ 115 0059 00 00 00 00 		.4byte	.LASF14
+ 116 005b 02          		.1byte	0x2
+ 117 005b 01 E4       		.2byte	0x1e4
+ 118 005c 00 00 00 64 		.4byte	0x64
+ 119 005e 01          		.1byte	0x1
+ 120 005f 05          		.1byte	0x5
+ 121 005f 03          		.1byte	0x3
+ 122 0060 00 00 00 00 		.4byte	g_cskey_flags
+ 123 0062 07          		.1byte	0x7
+ 124 0062 00 00 00 00 		.4byte	.LASF15
+ 125 0064 03          		.1byte	0x3
+ 126 0065 35          		.1byte	0x35
+ 127 0065 00 00 00 76 		.4byte	0x76
+ 128 0067 01          		.1byte	0x1
+ 129 0068 05          		.1byte	0x5
+ 130 0068 03          		.1byte	0x3
+ 131 0069 00 00 00 00 		.4byte	scanning_ongoing
+ 132 006b 00          		.1byte	0x0
+ 133                 		.section	.debug_abbrev
+ 134 0000 01          		.1byte	0x1
+ 135 0000 11          		.1byte	0x11
+ 136 0001 01          		.1byte	0x1
+ 137 0001 25          		.1byte	0x25
+ 138 0002 0E          		.1byte	0xe
+ 139 0002 13          		.1byte	0x13
+ 140 0003 0B          		.1byte	0xb
+ 141 0003 03          		.1byte	0x3
+ 142 0004 0E          		.1byte	0xe
+ 143 0004 1B          		.1byte	0x1b
+ 144 0005 0E          		.1byte	0xe
+ 145 0005 11          		.1byte	0x11
+ 146 0006 01          		.1byte	0x1
+ 147 0006 12          		.1byte	0x12
+ 148 0007 01          		.1byte	0x1
+ 149 0007 10          		.1byte	0x10
+ 150 0008 06          		.1byte	0x6
+ 151 0008 00          		.1byte	0x0
+ 152 0009 00          		.1byte	0x0
+ 153 0009 02          		.1byte	0x2
+ 154 000a 24          		.1byte	0x24
+ 155 000a 00          		.1byte	0x0
+ 156 000b 0B          		.1byte	0xb
+ 157 000b 0B          		.1byte	0xb
+ 158 000c 3E          		.1byte	0x3e
+ 159 000c 0B          		.1byte	0xb
+ 160 000d 03          		.1byte	0x3
+ 161 000d 08          		.1byte	0x8
+ 162 000e 00          		.1byte	0x0
+ 163 000e 00          		.1byte	0x0
+ 164 000f 03          		.1byte	0x3
+ 165 000f 24          		.1byte	0x24
+ 166 0010 00          		.1byte	0x0
+ 167 0010 0B          		.1byte	0xb
+ 168 0011 0B          		.1byte	0xb
+ 169 0011 3E          		.1byte	0x3e
+ 170 0012 0B          		.1byte	0xb
+ 171 0012 03          		.1byte	0x3
+ 172 0013 0E          		.1byte	0xe
+ 173 0013 00          		.1byte	0x0
+ 174 0014 00          		.1byte	0x0
+ 175 0014 04          		.1byte	0x4
+ 176 0015 16          		.1byte	0x16
+ 177 0015 00          		.1byte	0x0
+ 178 0016 03          		.1byte	0x3
+ 179 0016 0E          		.1byte	0xe
+ 180 0017 3A          		.1byte	0x3a
+ 181 0017 0B          		.1byte	0xb
+ 182 0018 3B          		.1byte	0x3b
+ 183 0018 0B          		.1byte	0xb
+ 184 0019 49          		.1byte	0x49
+ 185 0019 13          		.1byte	0x13
+ 186 001a 00          		.1byte	0x0
+ 187 001a 00          		.1byte	0x0
+ 188 001b 05          		.1byte	0x5
+ 189 001b 24          		.1byte	0x24
+ 190 001c 00          		.1byte	0x0
+ 191 001c 0B          		.1byte	0xb
+ 192 001d 0B          		.1byte	0xb
+ 193 001d 3E          		.1byte	0x3e
+ 194 001e 0B          		.1byte	0xb
+ 195 001e 00          		.1byte	0x0
+ 196 001f 00          		.1byte	0x0
+ 197 001f 06          		.1byte	0x6
+ 198 0020 34          		.1byte	0x34
+ 199 0020 00          		.1byte	0x0
+ 200 0021 03          		.1byte	0x3
+ 201 0021 0E          		.1byte	0xe
+ 202 0022 3A          		.1byte	0x3a
+ 203 0022 0B          		.1byte	0xb
+ 204 0023 3B          		.1byte	0x3b
+ 205 0023 05          		.1byte	0x5
+ 206 0024 49          		.1byte	0x49
+ 207 0024 13          		.1byte	0x13
+ 208 0025 3F          		.1byte	0x3f
+ 209 0025 0C          		.1byte	0xc
+ 210 0026 02          		.1byte	0x2
+ 211 0026 0A          		.1byte	0xa
+ 212 0027 00          		.1byte	0x0
+ 213 0027 00          		.1byte	0x0
+ 214 0028 07          		.1byte	0x7
+ 215 0028 34          		.1byte	0x34
+ 216 0029 00          		.1byte	0x0
+ 217 0029 03          		.1byte	0x3
+ 218 002a 0E          		.1byte	0xe
+ 219 002a 3A          		.1byte	0x3a
+ 220 002b 0B          		.1byte	0xb
+ 221 002b 3B          		.1byte	0x3b
+ 222 002c 0B          		.1byte	0xb
+ 223 002c 49          		.1byte	0x49
+ 224 002d 13          		.1byte	0x13
+ 225 002d 3F          		.1byte	0x3f
+ 226 002e 0C          		.1byte	0xc
+ 227 002e 02          		.1byte	0x2
+ 228 002f 0A          		.1byte	0xa
+ 229 002f 00          		.1byte	0x0
+ 230 0030 00          		.1byte	0x0
+ 231 0030 00          		.1byte	0x0
+ 232                 		.section	.debug_pubnames,"",@progbits
+ 233 0000 00 00 00 5E 		.4byte	0x5e
+ 234 0002 00 02       		.2byte	0x2
+ 235 0003 00 00 00 00 		.4byte	.Ldebug_info0
+ 236 0005 00 00 00 D7 		.4byte	0xd7
+ 237 0007 00 00 00 8B 		.4byte	0x8b
+ 238 0009 67 5F 61 70 		.ascii "g_app_nvm_offset\000"
+ 238      70 5F 6E 76 
+ 238      6D 5F 6F 66 
+ 238      66 73 65 74 
+ 238      00 
+ 239 0011 00 00 00 9E 		.4byte	0x9e
+ 240 0013 67 5F 61 70 		.ascii "g_app_nvm_fresh\000"
+ 240      70 5F 6E 76 
+ 240      6D 5F 66 72 
+ 240      65 73 68 00 
+ 241 001b 00 00 00 B1 		.4byte	0xb1
+ 242 001d 67 5F 63 73 		.ascii "g_cskey_flags\000"
+ 242      6B 65 79 5F 
+ 242      66 6C 61 67 
+ 242      73 00 
+ 243 0024 00 00 00 C4 		.4byte	0xc4
+ 244 0026 73 63 61 6E 		.ascii "scanning_ongoing\000"
+ 244      6E 69 6E 67 
+ 244      5F 6F 6E 67 
+ 244      6F 69 6E 67 
+ 244      00 
+ 245 002f 00 00 00 00 		.4byte	0x0
+ 246                 		.section	.debug_str,"MS",@progbits,1
+ 247                 	.LASF5:
+ 248 0000 6C 6F 6E 67 		.ascii "long long int\000"
+ 248      20 6C 6F 6E 
+ 248      67 20 69 6E 
+ 248      74 00 
+ 249                 	.LASF13:
+ 250 0007 67 5F 61 70 		.ascii "g_app_nvm_fresh\000"
+ 250      70 5F 6E 76 
+ 250      6D 5F 66 72 
+ 250      65 73 68 00 
+ 251                 	.LASF15:
+ 252 000f 73 63 61 6E 		.ascii "scanning_ongoing\000"
+ 252      6E 69 6E 67 
+ 252      5F 6F 6E 67 
+ 252      6F 69 6E 67 
+ 252      00 
+ 253                 	.LASF4:
+ 254 0017 6C 6F 6E 67 		.ascii "long unsigned int\000"
+ 254      20 75 6E 73 
+ 254      69 67 6E 65 
+ 254      64 20 69 6E 
+ 254      74 00 
+ 255                 	.LASF18:
+ 256 0020 43 3A 5C 55 		.ascii "C:\\Users\\Admin\\Desktop\\1024_Uart_rev0.2 - Copy\\1024_Uart_rev0.2\\application\\csr_mes
+ 256      73 65 72 73 
+ 256      5C 41 64 6D 
+ 256      69 6E 5C 44 
+ 256      65 73 6B 74 
+ 257                 	.LASF16:
+ 258 004e 47 4E 55 20 		.ascii "GNU C 4.3.4 CSR version 31 for xap [2855778]\000"
+ 258      43 20 34 2E 
+ 258      33 2E 34 20 
+ 258      43 53 52 20 
+ 258      76 65 72 73 
+ 259                 	.LASF10:
+ 260 0064 62 6F 6F 6C 		.ascii "bool\000"
+ 260      00 
+ 261                 	.LASF6:
+ 262 0067 6C 6F 6E 67 		.ascii "long long unsigned int\000"
+ 262      20 6C 6F 6E 
+ 262      67 20 75 6E 
+ 262      73 69 67 6E 
+ 262      65 64 20 69 
+ 263                 	.LASF7:
+ 264 0072 75 6E 73 69 		.ascii "unsigned char\000"
+ 264      67 6E 65 64 
+ 264      20 63 68 61 
+ 264      72 00 
+ 265                 	.LASF14:
+ 266 0079 67 5F 63 73 		.ascii "g_cskey_flags\000"
+ 266      6B 65 79 5F 
+ 266      66 6C 61 67 
+ 266      73 00 
+ 267                 	.LASF3:
+ 268 0080 6C 6F 6E 67 		.ascii "long int\000"
+ 268      20 69 6E 74 
+ 268      00 
+ 269                 	.LASF1:
+ 270 0085 73 68 6F 72 		.ascii "short int\000"
+ 270      74 20 69 6E 
+ 270      74 00 
+ 271                 	.LASF12:
+ 272 008a 67 5F 61 70 		.ascii "g_app_nvm_offset\000"
+ 272      70 5F 6E 76 
+ 272      6D 5F 6F 66 
+ 272      66 73 65 74 
+ 272      00 
+ 273                 	.LASF2:
+ 274 0092 73 68 6F 72 		.ascii "short unsigned int\000"
+ 274      74 20 75 6E 
+ 274      73 69 67 6E 
+ 274      65 64 20 69 
+ 274      6E 74 00 
+ 275                 	.LASF8:
+ 276 009c 73 69 67 6E 		.ascii "signed char\000"
+ 276      65 64 20 63 
+ 276      68 61 72 00 
+ 277                 	.LASF17:
+ 278 00a2 2E 2E 2F 6D 		.ascii "../mesh_common/mesh/handlers/largeobjecttransfer_model/largeobjecttransfer_model_handler.c
+ 278      65 73 68 5F 
+ 278      63 6F 6D 6D 
+ 278      6F 6E 2F 6D 
+ 278      65 73 68 2F 
+ 279                 	.LASF9:
+ 280 00cf 75 69 6E 74 		.ascii "uint16\000"
+ 280      31 36 00 
+ 281                 	.LASF0:
+ 282 00d3 75 6E 73 69 		.ascii "unsigned int\000"
+ 282      67 6E 65 64 
+ 282      20 69 6E 74 
+ 282      00 
+ 283                 	.LASF11:
+ 284 00d9 63 68 61 72 		.ascii "char\000"
+ 284      00 
+ 285                 		.ident	"GCC: (GNU) 4.3.4 CSR version 31 for xap [2855778]"

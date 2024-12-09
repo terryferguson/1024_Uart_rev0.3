@@ -1,0 +1,1928 @@
+   1                 		.file	"gaia_client.c"
+   2                 		.variant xap2+
+   3                 	
+   4                 		.large
+   5                 	
+   6                 		.section	.debug_abbrev,"",@progbits
+   7                 	.Ldebug_abbrev0:
+   8                 		.section	.debug_info,"",@progbits
+   9                 	.Ldebug_info0:
+  10                 		.section	.debug_line,"",@progbits
+  11                 	.Ldebug_line0:
+  12 0000 00 00 00 00 		.text
+  12      00 02 00 00 
+  12      00 00 01 01 
+  12      FB 0E 0D 00 
+  12      01 01 01 01 
+  13                 	.Ltext0:
+  14                 		.section	.text.gaiaHandleNotificationCommand,"ax",@progbits
+  15                 		.type	gaiaHandleNotificationCommand, @function
+  16                 	gaiaHandleNotificationCommand:
+  17                 	.LFB2:
+  18                 		.file 1 "../mesh_common/client/gaia/gaia_client.c"
+   0:../mesh_common/client/gaia/gaia_client.c **** /******************************************************************************
+   1:../mesh_common/client/gaia/gaia_client.c ****  *  %%fullcopyright(2016)
+   2:../mesh_common/client/gaia/gaia_client.c ****  *  %%version
+   3:../mesh_common/client/gaia/gaia_client.c ****  *  %%appversion
+   4:../mesh_common/client/gaia/gaia_client.c ****  *
+   5:../mesh_common/client/gaia/gaia_client.c ****  * FILE
+   6:../mesh_common/client/gaia/gaia_client.c ****  *    gaia_client.c
+   7:../mesh_common/client/gaia/gaia_client.c ****  *
+   8:../mesh_common/client/gaia/gaia_client.c ****  *  DESCRIPTION
+   9:../mesh_common/client/gaia/gaia_client.c ****  *    This file implements the GAIA protocol for a client connection
+  10:../mesh_common/client/gaia/gaia_client.c ****  *
+  11:../mesh_common/client/gaia/gaia_client.c ****  ******************************************************************************/
+  12:../mesh_common/client/gaia/gaia_client.c **** 
+  13:../mesh_common/client/gaia/gaia_client.c **** /*=============================================================================*
+  14:../mesh_common/client/gaia/gaia_client.c ****  *  SDK Header Files
+  15:../mesh_common/client/gaia/gaia_client.c ****  *============================================================================*/
+  16:../mesh_common/client/gaia/gaia_client.c **** #include <mem.h>
+  17:../mesh_common/client/gaia/gaia_client.c **** 
+  18:../mesh_common/client/gaia/gaia_client.c **** /*=============================================================================*
+  19:../mesh_common/client/gaia/gaia_client.c ****  *  Local Header Files
+  20:../mesh_common/client/gaia/gaia_client.c ****  *============================================================================*/
+  21:../mesh_common/client/gaia/gaia_client.c **** #include "gaia_otau_client_private.h"
+  22:../mesh_common/client/gaia/gaia_client.c **** #include "gaia_client_service.h"
+  23:../mesh_common/client/gaia/gaia_client.c **** #include "gaia_client.h"
+  24:../mesh_common/client/gaia/gaia_client.c **** #include "gaia.h"
+  25:../mesh_common/client/gaia/gaia_client.c **** #include "byte_utils.h"
+  26:../mesh_common/client/gaia/gaia_client.c **** 
+  27:../mesh_common/client/gaia/gaia_client.c **** /*============================================================================*
+  28:../mesh_common/client/gaia/gaia_client.c ****  *  Private Definitions
+  29:../mesh_common/client/gaia/gaia_client.c ****  *============================================================================*/
+  30:../mesh_common/client/gaia/gaia_client.c **** #define GAIA_CLIENT_SEND_ACK_PKT_SIZE                       (5)
+  31:../mesh_common/client/gaia/gaia_client.c **** #define GAIA_CLIENT_CONNECT_PKT_SIZE                        (4)
+  32:../mesh_common/client/gaia/gaia_client.c **** #define GAIA_CLIENT_DISCONNECT_PKT_SIZE                     (4)
+  33:../mesh_common/client/gaia/gaia_client.c **** #define GAIA_CLIENT_COMMAND_PKT_SIZE                        (20)
+  34:../mesh_common/client/gaia/gaia_client.c **** #define GAIA_CLIENT_COMMAND_HEADER_SIZE                     (4)
+  35:../mesh_common/client/gaia/gaia_client.c **** 
+  36:../mesh_common/client/gaia/gaia_client.c **** /*=============================================================================*
+  37:../mesh_common/client/gaia/gaia_client.c ****  *  Private Function Implementations
+  38:../mesh_common/client/gaia/gaia_client.c ****  *============================================================================*/
+  39:../mesh_common/client/gaia/gaia_client.c **** 
+  40:../mesh_common/client/gaia/gaia_client.c **** /*-----------------------------------------------------------------------------
+  41:../mesh_common/client/gaia/gaia_client.c ****  * NAME
+  42:../mesh_common/client/gaia/gaia_client.c ****  *     gaiaHandleNotificationCommand
+  43:../mesh_common/client/gaia/gaia_client.c ****  *
+  44:../mesh_common/client/gaia/gaia_client.c ****  * DESCRIPTION
+  45:../mesh_common/client/gaia/gaia_client.c ****  *     This function handles notification command
+  46:../mesh_common/client/gaia/gaia_client.c ****  *
+  47:../mesh_common/client/gaia/gaia_client.c ****  * RETURNS
+  48:../mesh_common/client/gaia/gaia_client.c ****  *      Nothing
+  49:../mesh_common/client/gaia/gaia_client.c ****  *----------------------------------------------------------------------------*/
+  50:../mesh_common/client/gaia/gaia_client.c **** 
+  51:../mesh_common/client/gaia/gaia_client.c **** static void gaiaHandleNotificationCommand(device_handle_id device_id,
+  52:../mesh_common/client/gaia/gaia_client.c ****                                           uint16 command_id,
+  53:../mesh_common/client/gaia/gaia_client.c ****                                           uint16 payload_length,
+  54:../mesh_common/client/gaia/gaia_client.c ****                                           uint8 *payload)
+  55:../mesh_common/client/gaia/gaia_client.c **** {
+  19                 	rl	#0x0006
+  20 0000 FA 0B       	.LCFI0:
+  21                 		st	AL,@(0x0002,Y)
+  22 0001 02 27       		st	AH,@(0x0003,Y)
+  23 0002 03 23       		.loc 1 58 0
+  56:../mesh_common/client/gaia/gaia_client.c **** load++;
+  57:../mesh_common/client/gaia/gaia_client.c ****     payload_length--;
+  24                 	,@(0x0007,Y)
+  25 0003 07 1B       		ld	AL,@(0,X)
+  26 0004 00 16       		st	AL,@(0x0001,Y)
+  27 0005 01 27       		.loc 1 59 0
+  58:../mesh_common/client/gaia/gaia_client.c ****    switch (command_id)
+  28                 	AL,@(0x0007,Y)
+  29 0006 07 17       		ld	X,@$XAP_AL
+  30 0007 00 00 00 19 		add	X,#0x0001
+  31 0009 01 38       		st	X,@(0x0007,Y)
+  32 000a 07 2B       		.loc 1 60 0
+  59:../mesh_common/client/gaia/gaia_client.c ****    {
+  33                 	L,@(0x0006,Y)
+  34 000b 06 17       		ld	X,@$XAP_AL
+  35 000c 00 00 00 19 		add	X,#0xffff
+  36 000e FF 38       		st	X,@(0x0006,Y)
+  37 000f 06 2B       		.loc 1 62 0
+  60:../mesh_common/client/gaia/gaia_client.c ****        case GAIA_EVENT_NOTIFICATION:
+  61:../mesh_common/client/gaia/gaia_client.c ****         {
+  38                 	L,@(0x0003,Y)
+  39 0010 03 17       		cmp	AL,#0x4003
+  40 0011 40 00 03 84 		bne	.L8
+  41 0013 00 00 00 00 	.L3:
+  41      00 F0 
+  42                 		.loc 1 66 0
+  62:../mesh_common/client/gaia/gaia_client.c ****           if(event_code == GAIA_EVENT_VMUP_PACKET)
+  63:../mesh_common/client/gaia/gaia_client.c ****             {
+  64:../mesh_common/client/gaia/gaia_client.c ****                 HandleGaiaResponseNotification(device_id, payload_length, payload);
+  65:../mesh_common/client/gaia/gaia_client.c ****             }
+  43                 	L,@(0x0001,Y)
+  44 0016 01 17       		cmp	AL,#0x0012
+  45 0017 12 84       		bne	.L4
+  46 0018 00 00 00 00 		.loc 1 68 0
+  46      00 F0 
+  66:../mesh_common/client/gaia/gaia_client.c ****         else
+  67:../mesh_common/client/gaia/gaia_client.c ****             {
+  47                 	AL,@(0x0007,Y)
+  48 001b 07 17       		st	AL,@(0,Y)
+  49 001c 00 27       		ld	AL,@(0x0002,Y)
+  50 001d 02 17       		ld	AH,@(0x0006,Y)
+  51 001e 06 13       		bsr	HandleGaiaResponseNotification
+  52 001f 00 00 00 00 		bra	.L7
+  52      00 9C 
+  53 0022 00 00 00 00 	.L4:
+  53      00 E0 
+  54                 		.loc 1 72 0
+  68:../mesh_common/client/gaia/gaia_client.c ****               GaiaClientSendAcknowledgement(device_id, GAIA_STATUS_NOT_SUPPORTED);
+  69:../mesh_common/client/gaia/gaia_client.c ****             }
+  70:../mesh_common/client/gaia/gaia_client.c ****         }
+  71:../mesh_common/client/gaia/gaia_client.c ****         break;
+  55                 	(0x0002,Y)
+  56 0025 02 17       		ld	AH,#0x0001
+  57 0026 01 10       		bsr	GaiaClientSendAcknowledgement
+  58 0027 00 00 00 00 		bra	.L7
+  58      00 9C 
+  59 002a 00 00 00 00 	.L8:
+  59      00 E0 
+  60                 		.loc 1 78 0
+  72:../mesh_common/client/gaia/gaia_client.c ****      default:
+  73:../mesh_common/client/gaia/gaia_client.c ****             GaiaClientSendAcknowledgement(device_id, GAIA_STATUS_NOT_SUPPORTED);
+  74:../mesh_common/client/gaia/gaia_client.c ****         break;
+  75:../mesh_common/client/gaia/gaia_client.c ****     }
+  76:../mesh_common/client/gaia/gaia_client.c **** }
+  77:../mesh_common/client/gaia/gaia_client.c **** 
+  61                 	,@(0x0002,Y)
+  62 002d 02 17       		ld	AH,#0x0001
+  63 002e 01 10       		bsr	GaiaClientSendAcknowledgement
+  64 002f 00 00 00 00 	.L7:
+  64      00 9C 
+  65                 		.loc 1 81 0
+  78:../mesh_common/client/gaia/gaia_client.c **** -------------------------------------------------------------------------
+  79:../mesh_common/client/gaia/gaia_client.c ****  * NAME
+  80:../mesh_common/client/gaia/gaia_client.c ****  *      gaiaHandleDataTransferCommandAck
+  66                 	el	#0x0006
+  67 0032 FA 0F       	.LFE2:
+  68                 		.size	gaiaHandleNotificationCommand, .-gaiaHandleNotificationCommand
+  69                 		.equ	__size_of_gaiaHandleNotificationCommand,. - gaiaHandleNotificationCommand
+  70                 		.section	.text.gaiaHandleDataTransferCommandAck,"ax",@progbits
+  71                 		.type	gaiaHandleDataTransferCommandAck, @function
+  72                 	gaiaHandleDataTransferCommandAck:
+  73                 	.LFB3:
+  74                 		.loc 1 98 0
+  81:../mesh_common/client/gaia/gaia_client.c ****  * DESCRIPTION
+  82:../mesh_common/client/gaia/gaia_client.c ****  *      Handle a Data Transfer command Acknowledgement
+  83:../mesh_common/client/gaia/gaia_client.c ****  *
+  84:../mesh_common/client/gaia/gaia_client.c ****  * RETURNS
+  85:../mesh_common/client/gaia/gaia_client.c ****  *      Nothing
+  86:../mesh_common/client/gaia/gaia_client.c ****  *----------------------------------------------------------------------------*/
+  87:../mesh_common/client/gaia/gaia_client.c **** 
+  88:../mesh_common/client/gaia/gaia_client.c **** static void gaiaHandleDataTransferCommandAck(device_handle_id device_id,
+  89:../mesh_common/client/gaia/gaia_client.c ****                                              uint16 command_id,
+  90:../mesh_common/client/gaia/gaia_client.c ****                                              uint16 payload_length,
+  91:../mesh_common/client/gaia/gaia_client.c ****                                              uint8 *payload)
+  92:../mesh_common/client/gaia/gaia_client.c **** {
+  93:../mesh_common/client/gaia/gaia_client.c ****      switch (command_id)
+  94:../mesh_common/client/gaia/gaia_client.c ****      {
+  95:../mesh_common/client/gaia/gaia_client.c ****         case (GAIA_COMMAND_VM_UPGRADE_CONNECT):
+  96:../mesh_common/client/gaia/gaia_client.c ****             HandleUpgradeConnectAck(device_id, payload_length, payload);
+  97:../mesh_common/client/gaia/gaia_client.c ****         break;
+  75                 	0x0006
+  76 0000 FA 0B       	.LCFI1:
+  77                 		st	AL,@(0x0001,Y)
+  78 0001 01 27       		st	AH,@(0x0002,Y)
+  79 0002 02 23       		.loc 1 99 0
+  98:../mesh_common/client/gaia/gaia_client.c **** IA_COMMAND_VM_UPGRADE_DISCONNECT):
+  80                 	L,@(0x0002,Y)
+  81 0003 02 17       		st	AL,@(0x0003,Y)
+  82 0004 03 27       		ld	AL,@(0x0003,Y)
+  83 0005 03 17       		cmp	AL,#0x0641
+  84 0006 06 00 41 84 		beq	.L12
+  85 0008 00 00 00 00 		ld	AL,@(0x0003,Y)
+  85      00 F4 
+  86 000b 03 17       		cmp	AL,#0x0642
+  87 000c 06 00 42 84 		beq	.L13
+  88 000e 00 00 00 00 		ld	AL,@(0x0003,Y)
+  88      00 F4 
+  89 0011 03 17       		cmp	AL,#0x0640
+  90 0012 06 00 40 84 		bne	.L14
+  91 0014 00 00 00 00 	.L11:
+  91      00 F0 
+  92                 		.loc 1 102 0
+  99:../mesh_common/client/gaia/gaia_client.c ****            HandleUpgradeDisconnectAck(device_id, payload_length, payload);
+ 100:../mesh_common/client/gaia/gaia_client.c ****         break;
+ 101:../mesh_common/client/gaia/gaia_client.c **** 
+  93                 	07,Y)
+  94 0017 07 17       		st	AL,@(0,Y)
+  95 0018 00 27       		ld	AL,@(0x0001,Y)
+  96 0019 01 17       		ld	AH,@(0x0006,Y)
+  97 001a 06 13       		bsr	HandleUpgradeConnectAck
+  98 001b 00 00 00 00 		bra	.L14
+  98      00 9C 
+  99 001e 00 00 00 00 	.L12:
+  99      00 E0 
+ 100                 		.loc 1 106 0
+ 102:../mesh_common/client/gaia/gaia_client.c ****      case (GAIA_COMMAND_VM_UPGRADE_CONTROL):
+ 103:../mesh_common/client/gaia/gaia_client.c ****             HandleUpgradeControlRequestAck(device_id, payload_length, payload);
+ 104:../mesh_common/client/gaia/gaia_client.c ****         break;
+ 105:../mesh_common/client/gaia/gaia_client.c **** 
+ 101                 	(0x0007,Y)
+ 102 0021 07 17       		st	AL,@(0,Y)
+ 103 0022 00 27       		ld	AL,@(0x0001,Y)
+ 104 0023 01 17       		ld	AH,@(0x0006,Y)
+ 105 0024 06 13       		bsr	HandleUpgradeDisconnectAck
+ 106 0025 00 00 00 00 		bra	.L14
+ 106      00 9C 
+ 107 0028 00 00 00 00 	.L13:
+ 107      00 E0 
+ 108                 		.loc 1 110 0
+ 106:../mesh_common/client/gaia/gaia_client.c ****     default:
+ 107:../mesh_common/client/gaia/gaia_client.c ****         break;
+ 108:../mesh_common/client/gaia/gaia_client.c ****     }
+ 109:../mesh_common/client/gaia/gaia_client.c **** }
+ 109                 	(0x0007,Y)
+ 110 002b 07 17       		st	AL,@(0,Y)
+ 111 002c 00 27       		ld	AL,@(0x0001,Y)
+ 112 002d 01 17       		ld	AH,@(0x0006,Y)
+ 113 002e 06 13       		bsr	HandleUpgradeControlRequestAck
+ 114 002f 00 00 00 00 	.L14:
+ 114      00 9C 
+ 115                 		.loc 1 116 0
+ 110:../mesh_common/client/gaia/gaia_client.c **** ===========================================================================*
+ 111:../mesh_common/client/gaia/gaia_client.c ****  *  Public Function Implementations
+ 112:../mesh_common/client/gaia/gaia_client.c ****  *============================================================================*/
+ 113:../mesh_common/client/gaia/gaia_client.c **** 
+ 114:../mesh_common/client/gaia/gaia_client.c **** /*----------------------------------------------------------------------------*
+ 115:../mesh_common/client/gaia/gaia_client.c ****  *  NAME
+ 116                 		#0x0006
+ 117 0032 FA 0F       	.LFE3:
+ 118                 		.size	gaiaHandleDataTransferCommandAck, .-gaiaHandleDataTransferCommandAck
+ 119                 		.equ	__size_of_gaiaHandleDataTransferCommandAck,. - gaiaHandleDataTransferCommandAck
+ 120                 		.section	.text.GAIAClientProcessCommand,"ax",@progbits
+ 121                 		.global	GAIAClientProcessCommand
+ 122                 		.type	GAIAClientProcessCommand, @function
+ 123                 	GAIAClientProcessCommand:
+ 124                 	.LFB4:
+ 125                 		.loc 1 133 0
+ 116:../mesh_common/client/gaia/gaia_client.c ****   GAIAClientProcessCommand
+ 117:../mesh_common/client/gaia/gaia_client.c ****  *
+ 118:../mesh_common/client/gaia/gaia_client.c ****  *  DESCRIPTION
+ 119:../mesh_common/client/gaia/gaia_client.c ****  *      Process a GAIA command
+ 120:../mesh_common/client/gaia/gaia_client.c ****  *
+ 121:../mesh_common/client/gaia/gaia_client.c ****  *  RETURNS/MODIFIES
+ 122:../mesh_common/client/gaia/gaia_client.c ****  *      None
+ 123:../mesh_common/client/gaia/gaia_client.c ****  *----------------------------------------------------------------------------*/
+ 124:../mesh_common/client/gaia/gaia_client.c **** extern void GAIAClientProcessCommand(device_handle_id device_id, 
+ 125:../mesh_common/client/gaia/gaia_client.c ****                                      uint16 payload_len, uint8 *payload)
+ 126:../mesh_common/client/gaia/gaia_client.c **** {
+ 127:../mesh_common/client/gaia/gaia_client.c ****     uint16 command_id = 0;
+ 128:../mesh_common/client/gaia/gaia_client.c **** 
+ 129:../mesh_common/client/gaia/gaia_client.c ****     if (payload_len >= GAIA_GATT_VID_SIZE)
+ 130:../mesh_common/client/gaia/gaia_client.c ****     {
+ 131:../mesh_common/client/gaia/gaia_client.c ****         /* First two bytes contain vendor id in big-endian format */
+ 132:../mesh_common/client/gaia/gaia_client.c ****         if (BufReadUint16BE(&payload) != GAIA_VENDOR_CSR)
+ 126                 	x0007
+ 127 0000 F9 0B       	.LCFI2:
+ 128                 		st	AL,@(0x0003,Y)
+ 129 0001 03 27       		st	AH,@(0x0004,Y)
+ 130 0002 04 23       		.loc 1 134 0
+ 133:../mesh_common/client/gaia/gaia_client.c ****      return;
+ 131                 	L,#0x0000
+ 132 0003 00 14       		st	AL,@(0x0002,Y)
+ 133 0004 02 27       		.loc 1 136 0
+ 134:../mesh_common/client/gaia/gaia_client.c ****        }
+ 135:../mesh_common/client/gaia/gaia_client.c ****         payload_len -= GAIA_GATT_VID_SIZE;
+ 134                 		AL,@(0x0004,Y)
+ 135 0005 04 17       		cmp	AL,#0x0001
+ 136 0006 01 84       		bcz	.L16
+ 137 0007 00 00 00 00 		.loc 1 139 0
+ 137      00 2C 
+ 136:../mesh_common/client/gaia/gaia_client.c ****   }
+ 137:../mesh_common/client/gaia/gaia_client.c **** 
+ 138:../mesh_common/client/gaia/gaia_client.c ****     if (payload_len >= GAIA_GATT_COMMAND_ID_SIZE)
+ 138                 	AL,@$XAP_UY
+ 139 000a 00 00 00 15 		add	AL,#0x0007
+ 140 000c 07 34       		bsr	BufReadUint16BE
+ 141 000d 00 00 00 00 		cmp	AL,#0x000a
+ 141      00 9C 
+ 142 0010 0A 84       		bne	.L24
+ 143 0011 00 00 00 00 		.loc 1 143 0
+ 143      00 F0 
+ 139:../mesh_common/client/gaia/gaia_client.c ****  {
+ 140:../mesh_common/client/gaia/gaia_client.c ****         /* next two bytes contain commandId in big-endian format */
+ 141:../mesh_common/client/gaia/gaia_client.c ****         command_id = BufReadUint16BE(&payload);
+ 142:../mesh_common/client/gaia/gaia_client.c ****         payload_len -= GAIA_GATT_COMMAND_ID_SIZE;
+ 144                 	,@(0x0004,Y)
+ 145 0014 04 17       		ld	X,@$XAP_AL
+ 146 0015 00 00 00 19 		add	X,#0xfffe
+ 147 0017 FE 38       		st	X,@(0x0004,Y)
+ 148 0018 04 2B       	.L16:
+ 149                 		.loc 1 146 0
+ 143:../mesh_common/client/gaia/gaia_client.c **** }
+ 144:../mesh_common/client/gaia/gaia_client.c **** 
+ 145:../mesh_common/client/gaia/gaia_client.c ****     if((HIGH(command_id) & GAIA_ACK_MASK_H))
+ 150                 	,@(0x0004,Y)
+ 151 0019 04 17       		cmp	AL,#0x0001
+ 152 001a 01 84       		bcz	.L18
+ 153 001b 00 00 00 00 		.loc 1 149 0
+ 153      00 2C 
+ 146:../mesh_common/client/gaia/gaia_client.c ****  {
+ 147:../mesh_common/client/gaia/gaia_client.c ****         switch (command_id & GAIA_COMMAND_TYPE_MASK)
+ 148:../mesh_common/client/gaia/gaia_client.c ****         {
+ 154                 	AL,@$XAP_UY
+ 155 001e 00 00 00 15 		add	AL,#0x0007
+ 156 0020 07 34       		bsr	BufReadUint16BE
+ 157 0021 00 00 00 00 		st	AL,@(0x0002,Y)
+ 157      00 9C 
+ 158 0024 02 27       		.loc 1 150 0
+ 149:../mesh_common/client/gaia/gaia_client.c ****          case GAIA_COMMAND_TYPE_DATA_TRANSFER:
+ 159                 	L,@(0x0004,Y)
+ 160 0025 04 17       		ld	X,@$XAP_AL
+ 161 0026 00 00 00 19 		add	X,#0xfffe
+ 162 0028 FE 38       		st	X,@(0x0004,Y)
+ 163 0029 04 2B       	.L18:
+ 164                 		.loc 1 153 0
+ 150:../mesh_common/client/gaia/gaia_client.c ****                command_id = command_id & (~GAIA_ACK_MASK);
+ 151:../mesh_common/client/gaia/gaia_client.c ****                 gaiaHandleDataTransferCommandAck(device_id, command_id,
+ 152:../mesh_common/client/gaia/gaia_client.c ****                                                  payload_len, payload);
+ 165                 	,@(0x0002,Y)
+ 166 002a 02 17       		tst	@$XAP_AL
+ 167 002b 00 00 00 99 		bpl	.L19
+ 168 002d 00 00 00 00 		.loc 1 155 0
+ 168      00 E8 
+ 153:../mesh_common/client/gaia/gaia_client.c ****          break;
+ 154:../mesh_common/client/gaia/gaia_client.c **** 
+ 169                 	AL,@(0x0002,Y)
+ 170 0030 02 17       		and	AL,#0x7f00
+ 171 0031 7F 00 00 C4 		cmp	AL,#0x0600
+ 172 0033 06 00 00 84 		bne	.L24
+ 173 0035 00 00 00 00 	.L21:
+ 173      00 F0 
+ 174                 		.loc 1 158 0
+ 155:../mesh_common/client/gaia/gaia_client.c ****           default:
+ 156:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 157:../mesh_common/client/gaia/gaia_client.c ****         }
+ 175                 	,@(0x0002,Y)
+ 176 0038 02 17       		and	AL,#0x7fff
+ 177 0039 80 00 FF C4 		st	AL,@(0x0002,Y)
+ 178 003b 02 27       		.loc 1 159 0
+ 158:../mesh_common/client/gaia/gaia_client.c ****  }
+ 179                 	AH,@(0x0007,Y)
+ 180 003c 07 13       		ld	AL,@(0x0004,Y)
+ 181 003d 04 17       		st	AL,@(0,Y)
+ 182 003e 00 27       		st	AH,@(0x0001,Y)
+ 183 003f 01 23       		ld	AL,@(0x0003,Y)
+ 184 0040 03 17       		ld	AH,@(0x0002,Y)
+ 185 0041 02 13       		bsr	gaiaHandleDataTransferCommandAck
+ 186 0042 00 00 00 00 		bra	.L24
+ 186      00 9C 
+ 187 0045 00 00 00 00 	.L19:
+ 187      00 E0 
+ 188                 		.loc 1 169 0
+ 159:../mesh_common/client/gaia/gaia_client.c ****    else
+ 160:../mesh_common/client/gaia/gaia_client.c ****     {
+ 161:../mesh_common/client/gaia/gaia_client.c ****         switch (command_id & GAIA_COMMAND_TYPE_MASK)
+ 162:../mesh_common/client/gaia/gaia_client.c ****         {
+ 163:../mesh_common/client/gaia/gaia_client.c ****             case GAIA_COMMAND_TYPE_NOTIFICATION:
+ 164:../mesh_common/client/gaia/gaia_client.c ****                 gaiaHandleNotificationCommand(device_id, command_id,
+ 165:../mesh_common/client/gaia/gaia_client.c ****                                               payload_len, payload);
+ 166:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 167:../mesh_common/client/gaia/gaia_client.c **** 
+ 168:../mesh_common/client/gaia/gaia_client.c ****             default:
+ 189                 	x0002,Y)
+ 190 0048 02 17       		and	AL,#0x7f00
+ 191 0049 7F 00 00 C4 		cmp	AL,#0x4000
+ 192 004b 40 00 00 84 		bne	.L25
+ 193 004d 00 00 00 00 	.L23:
+ 193      00 F0 
+ 194                 		.loc 1 172 0
+ 169:../mesh_common/client/gaia/gaia_client.c ****       GaiaClientSendAcknowledgement(device_id, GAIA_STATUS_NOT_SUPPORTED);
+ 170:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 171:../mesh_common/client/gaia/gaia_client.c ****         }
+ 195                 	,@(0x0007,Y)
+ 196 0050 07 13       		ld	AL,@(0x0004,Y)
+ 197 0051 04 17       		st	AL,@(0,Y)
+ 198 0052 00 27       		st	AH,@(0x0001,Y)
+ 199 0053 01 23       		ld	AL,@(0x0003,Y)
+ 200 0054 03 17       		ld	AH,@(0x0002,Y)
+ 201 0055 02 13       		bsr	gaiaHandleNotificationCommand
+ 202 0056 00 00 00 00 		bra	.L24
+ 202      00 9C 
+ 203 0059 00 00 00 00 	.L25:
+ 203      00 E0 
+ 204                 		.loc 1 177 0
+ 172:../mesh_common/client/gaia/gaia_client.c **** efault:
+ 173:../mesh_common/client/gaia/gaia_client.c ****                 GaiaClientSendAcknowledgement(device_id, GAIA_STATUS_NOT_SUPPORTED);
+ 174:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 175:../mesh_common/client/gaia/gaia_client.c ****         }
+ 176:../mesh_common/client/gaia/gaia_client.c ****     }
+ 205                 	x0003,Y)
+ 206 005c 03 17       		ld	AH,#0x0001
+ 207 005d 01 10       		bsr	GaiaClientSendAcknowledgement
+ 208 005e 00 00 00 00 	.L24:
+ 208      00 9C 
+ 209                 		.loc 1 181 0
+ 177:../mesh_common/client/gaia/gaia_client.c **** 
+ 178:../mesh_common/client/gaia/gaia_client.c ****                 GaiaClientSendAcknowledgement(device_id, GAIA_STATUS_NOT_SUPPORTED);
+ 179:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 180:../mesh_common/client/gaia/gaia_client.c ****         }
+ 210                 	el	#0x0007
+ 211 0061 F9 0F       	.LFE4:
+ 212                 		.size	GAIAClientProcessCommand, .-GAIAClientProcessCommand
+ 213                 		.global	__size_of_GAIAClientProcessCommand
+ 214                 		.equ	__size_of_GAIAClientProcessCommand,. - GAIAClientProcessCommand
+ 215                 		.section	.text.GaiaClientSendCommandPacket,"ax",@progbits
+ 216                 		.global	GaiaClientSendCommandPacket
+ 217                 		.type	GaiaClientSendCommandPacket, @function
+ 218                 	GaiaClientSendCommandPacket:
+ 219                 	.LFB5:
+ 220                 		.loc 1 197 0
+ 181:../mesh_common/client/gaia/gaia_client.c **** efault:
+ 182:../mesh_common/client/gaia/gaia_client.c ****                 GaiaClientSendAcknowledgement(device_id, GAIA_STATUS_NOT_SUPPORTED);
+ 183:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 184:../mesh_common/client/gaia/gaia_client.c ****         }
+ 185:../mesh_common/client/gaia/gaia_client.c ****     }
+ 186:../mesh_common/client/gaia/gaia_client.c **** }
+ 187:../mesh_common/client/gaia/gaia_client.c **** 
+ 188:../mesh_common/client/gaia/gaia_client.c **** /*-----------------------------------------------------------------------------
+ 189:../mesh_common/client/gaia/gaia_client.c ****  *  NAME
+ 190:../mesh_common/client/gaia/gaia_client.c ****  *      GaiaClientSendCommandPacket
+ 191:../mesh_common/client/gaia/gaia_client.c ****  *
+ 192:../mesh_common/client/gaia/gaia_client.c ****  *  DESCRIPTION
+ 193:../mesh_common/client/gaia/gaia_client.c ****  *      Prepares a upgrade control GAIA packet with header and given payload and 
+ 194:../mesh_common/client/gaia/gaia_client.c ****  *      sends BLE notification to host.
+ 195:../mesh_common/client/gaia/gaia_client.c ****  *
+ 196:../mesh_common/client/gaia/gaia_client.c ****  *  RETURNS:
+ 221                 	001a
+ 222 0000 E6 0B       	.LCFI3:
+ 223                 		st	AL,@(0x0016,Y)
+ 224 0001 16 27       		st	AH,@(0x0017,Y)
+ 225 0002 17 23       		.loc 1 199 0
+ 197:../mesh_common/client/gaia/gaia_client.c **** ontrol GAIA packet with header and given payload and 
+ 198:../mesh_common/client/gaia/gaia_client.c ****  *      sends BLE notification to host.
+ 226                 	L,@$XAP_UY
+ 227 0003 00 00 00 15 		add	AL,#0x0002
+ 228 0005 02 34       		st	AL,@(0x0001,Y)
+ 229 0006 01 27       		.loc 1 201 0
+ 199:../mesh_common/client/gaia/gaia_client.c **** epares a upgrade control GAIA packet with header and given payload and 
+ 200:../mesh_common/client/gaia/gaia_client.c ****  *      sends BLE notification to host.
+ 230                 	AL,@(0x0017,Y)
+ 231 0007 17 17       		cmp	AL,#0x0011
+ 232 0008 11 84       		bcc	.L28
+ 233 0009 00 00 00 00 		.loc 1 207 0
+ 233      00 F8 
+ 201:../mesh_common/client/gaia/gaia_client.c **** epares a upgrade control GAIA packet with header and given payload and 
+ 202:../mesh_common/client/gaia/gaia_client.c ****  *      sends BLE notification to host.
+ 203:../mesh_common/client/gaia/gaia_client.c ****  *
+ 204:../mesh_common/client/gaia/gaia_client.c ****  *  RETURNS:
+ 205:../mesh_common/client/gaia/gaia_client.c ****  *      None
+ 206:../mesh_common/client/gaia/gaia_client.c ****  *
+ 234                 	X,@(0x0001,Y)
+ 235 000c 01 1B       		ld	AL,#0x0000
+ 236 000d 00 14       		st	AL,@(0,X)
+ 237 000e 00 26       		ld	AL,@(0x0001,Y)
+ 238 000f 01 17       		ld	X,@$XAP_AL
+ 239 0010 00 00 00 19 		add	X,#0x0001
+ 240 0012 01 38       		st	X,@(0x0001,Y)
+ 241 0013 01 2B       		.loc 1 208 0
+ 207:../mesh_common/client/gaia/gaia_client.c ****  with header and given payload and 
+ 242                 	0x0001,Y)
+ 243 0014 01 1B       		ld	AL,#0x000a
+ 244 0015 0A 14       		st	AL,@(0,X)
+ 245 0016 00 26       		ld	AL,@(0x0001,Y)
+ 246 0017 01 17       		ld	X,@$XAP_AL
+ 247 0018 00 00 00 19 		add	X,#0x0001
+ 248 001a 01 38       		st	X,@(0x0001,Y)
+ 249 001b 01 2B       		.loc 1 209 0
+ 208:../mesh_common/client/gaia/gaia_client.c **** mmandPacket
+ 250                 	0x0001,Y)
+ 251 001c 01 1B       		ld	AL,#0x0006
+ 252 001d 06 14       		st	AL,@(0,X)
+ 253 001e 00 26       		ld	AL,@(0x0001,Y)
+ 254 001f 01 17       		ld	X,@$XAP_AL
+ 255 0020 00 00 00 19 		add	X,#0x0001
+ 256 0022 01 38       		st	X,@(0x0001,Y)
+ 257 0023 01 2B       		.loc 1 210 0
+ 209:../mesh_common/client/gaia/gaia_client.c **** ----------------------------------------------------------------------
+ 258                 	0x0001,Y)
+ 259 0024 01 1B       		ld	AL,#0x0042
+ 260 0025 42 14       		st	AL,@(0,X)
+ 261 0026 00 26       		ld	AL,@(0x0001,Y)
+ 262 0027 01 17       		ld	X,@$XAP_AL
+ 263 0028 00 00 00 19 		add	X,#0x0001
+ 264 002a 01 38       		st	X,@(0x0001,Y)
+ 265 002b 01 2B       		.loc 1 213 0
+ 210:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 211:../mesh_common/client/gaia/gaia_client.c ****         }
+ 212:../mesh_common/client/gaia/gaia_client.c ****     }
+ 266                 	(0x0017,Y)
+ 267 002c 17 17       		st	AL,@(0,Y)
+ 268 002d 00 27       		ld	AL,@(0x0001,Y)
+ 269 002e 01 17       		ld	AH,@(0x001a,Y)
+ 270 002f 1A 13       		bsr	memcpy
+ 271 0030 00 00 00 00 		.loc 1 214 0
+ 271      00 9C 
+ 213:../mesh_common/client/gaia/gaia_client.c **** 
+ 272                 	,@(0x0017,Y)
+ 273 0033 17 17       		ld	AH,@$XAP_AL
+ 274 0034 00 00 00 11 		add	AH,#0x0004
+ 275 0036 04 30       		ld	AL,@$XAP_UY
+ 276 0037 00 00 00 15 		add	AL,#0x0002
+ 277 0039 02 34       		st	AL,@(0,Y)
+ 278 003a 00 27       		ld	AL,@(0x0016,Y)
+ 279 003b 16 17       		bsr	GaiaWriteCommandEndpoint
+ 280 003c 00 00 00 00 	.L28:
+ 280      00 9C 
+ 281                 		.loc 1 217 0
+ 214:../mesh_common/client/gaia/gaia_client.c **** d, command_id,
+ 215:../mesh_common/client/gaia/gaia_client.c ****                                               payload_len, payload);
+ 216:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 282                 	x001a
+ 283 003f E6 0F       	.LFE5:
+ 284                 		.size	GaiaClientSendCommandPacket, .-GaiaClientSendCommandPacket
+ 285                 		.global	__size_of_GaiaClientSendCommandPacket
+ 286                 		.equ	__size_of_GaiaClientSendCommandPacket,. - GaiaClientSendCommandPacket
+ 287                 		.section	.text.GaiaClientSendDisconnectPacket,"ax",@progbits
+ 288                 		.global	GaiaClientSendDisconnectPacket
+ 289                 		.type	GaiaClientSendDisconnectPacket, @function
+ 290                 	GaiaClientSendDisconnectPacket:
+ 291                 	.LFB6:
+ 292                 		.loc 1 232 0
+ 217:../mesh_common/client/gaia/gaia_client.c **** ficationCommand(device_id, command_id,
+ 218:../mesh_common/client/gaia/gaia_client.c ****                                               payload_len, payload);
+ 219:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 220:../mesh_common/client/gaia/gaia_client.c **** 
+ 221:../mesh_common/client/gaia/gaia_client.c ****             default:
+ 222:../mesh_common/client/gaia/gaia_client.c ****                 GaiaClientSendAcknowledgement(device_id, GAIA_STATUS_NOT_SUPPORTED);
+ 223:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 224:../mesh_common/client/gaia/gaia_client.c ****         }
+ 225:../mesh_common/client/gaia/gaia_client.c ****     }
+ 226:../mesh_common/client/gaia/gaia_client.c **** }
+ 227:../mesh_common/client/gaia/gaia_client.c **** 
+ 228:../mesh_common/client/gaia/gaia_client.c **** /*-----------------------------------------------------------------------------
+ 229:../mesh_common/client/gaia/gaia_client.c ****  *  NAME
+ 230:../mesh_common/client/gaia/gaia_client.c ****  *      GaiaClientSendCommandPacket
+ 231:../mesh_common/client/gaia/gaia_client.c ****  *
+ 293                 	0009
+ 294 0000 F7 0B       	.LCFI4:
+ 295                 		st	AL,@(0x0006,Y)
+ 296 0001 06 27       		.loc 1 234 0
+ 232:../mesh_common/client/gaia/gaia_client.c **** ------------------------------------------------------------------
+ 233:../mesh_common/client/gaia/gaia_client.c ****  *  NAME
+ 297                 	AL,@$XAP_UY
+ 298 0002 00 00 00 15 		add	AL,#0x0002
+ 299 0004 02 34       		st	AL,@(0x0001,Y)
+ 300 0005 01 27       		.loc 1 237 0
+ 234:../mesh_common/client/gaia/gaia_client.c ****   break;
+ 235:../mesh_common/client/gaia/gaia_client.c ****         }
+ 236:../mesh_common/client/gaia/gaia_client.c ****     }
+ 301                 	X,@(0x0001,Y)
+ 302 0006 01 1B       		ld	AL,#0x0000
+ 303 0007 00 14       		st	AL,@(0,X)
+ 304 0008 00 26       		ld	AL,@(0x0001,Y)
+ 305 0009 01 17       		ld	X,@$XAP_AL
+ 306 000a 00 00 00 19 		add	X,#0x0001
+ 307 000c 01 38       		st	X,@(0x0001,Y)
+ 308 000d 01 2B       		.loc 1 238 0
+ 237:../mesh_common/client/gaia/gaia_client.c **** 
+ 309                 	0x0001,Y)
+ 310 000e 01 1B       		ld	AL,#0x000a
+ 311 000f 0A 14       		st	AL,@(0,X)
+ 312 0010 00 26       		ld	AL,@(0x0001,Y)
+ 313 0011 01 17       		ld	X,@$XAP_AL
+ 314 0012 00 00 00 19 		add	X,#0x0001
+ 315 0014 01 38       		st	X,@(0x0001,Y)
+ 316 0015 01 2B       		.loc 1 239 0
+ 238:../mesh_common/client/gaia/gaia_client.c **** d, command_id,
+ 317                 	0x0001,Y)
+ 318 0016 01 1B       		ld	AL,#0x0006
+ 319 0017 06 14       		st	AL,@(0,X)
+ 320 0018 00 26       		ld	AL,@(0x0001,Y)
+ 321 0019 01 17       		ld	X,@$XAP_AL
+ 322 001a 00 00 00 19 		add	X,#0x0001
+ 323 001c 01 38       		st	X,@(0x0001,Y)
+ 324 001d 01 2B       		.loc 1 240 0
+ 239:../mesh_common/client/gaia/gaia_client.c **** 
+ 325                 	0x0001,Y)
+ 326 001e 01 1B       		ld	AL,#0x0041
+ 327 001f 41 14       		st	AL,@(0,X)
+ 328 0020 00 26       		ld	AL,@(0x0001,Y)
+ 329 0021 01 17       		ld	X,@$XAP_AL
+ 330 0022 00 00 00 19 		add	X,#0x0001
+ 331 0024 01 38       		st	X,@(0x0001,Y)
+ 332 0025 01 2B       		.loc 1 242 0
+ 240:../mesh_common/client/gaia/gaia_client.c **** break;
+ 241:../mesh_common/client/gaia/gaia_client.c **** 
+ 333                 	$XAP_UY
+ 334 0026 00 00 00 15 		add	AL,#0x0002
+ 335 0028 02 34       		st	AL,@(0,Y)
+ 336 0029 00 27       		ld	AL,@(0x0006,Y)
+ 337 002a 06 17       		ld	AH,#0x0004
+ 338 002b 04 10       		bsr	GaiaWriteCommandEndpoint
+ 339 002c 00 00 00 00 		.loc 1 243 0
+ 339      00 9C 
+ 242:../mesh_common/client/gaia/gaia_client.c ****           default:
+ 340                 		#0x0009
+ 341 002f F7 0F       	.LFE6:
+ 342                 		.size	GaiaClientSendDisconnectPacket, .-GaiaClientSendDisconnectPacket
+ 343                 		.global	__size_of_GaiaClientSendDisconnectPacket
+ 344                 		.equ	__size_of_GaiaClientSendDisconnectPacket,. - GaiaClientSendDisconnectPacket
+ 345                 		.section	.text.GaiaClientSendConnectPacket,"ax",@progbits
+ 346                 		.global	GaiaClientSendConnectPacket
+ 347                 		.type	GaiaClientSendConnectPacket, @function
+ 348                 	GaiaClientSendConnectPacket:
+ 349                 	.LFB7:
+ 350                 		.loc 1 258 0
+ 243:../mesh_common/client/gaia/gaia_client.c ****            break;
+ 244:../mesh_common/client/gaia/gaia_client.c ****         }
+ 245:../mesh_common/client/gaia/gaia_client.c ****     }
+ 246:../mesh_common/client/gaia/gaia_client.c ****     else
+ 247:../mesh_common/client/gaia/gaia_client.c ****     {
+ 248:../mesh_common/client/gaia/gaia_client.c ****         switch (command_id & GAIA_COMMAND_TYPE_MASK)
+ 249:../mesh_common/client/gaia/gaia_client.c ****         {
+ 250:../mesh_common/client/gaia/gaia_client.c ****             case GAIA_COMMAND_TYPE_NOTIFICATION:
+ 251:../mesh_common/client/gaia/gaia_client.c ****                 gaiaHandleNotificationCommand(device_id, command_id,
+ 252:../mesh_common/client/gaia/gaia_client.c ****                                               payload_len, payload);
+ 253:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 254:../mesh_common/client/gaia/gaia_client.c **** 
+ 255:../mesh_common/client/gaia/gaia_client.c ****             default:
+ 256:../mesh_common/client/gaia/gaia_client.c ****                 GaiaClientSendAcknowledgement(device_id, GAIA_STATUS_NOT_SUPPORTED);
+ 257:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 351                 	0009
+ 352 0000 F7 0B       	.LCFI5:
+ 353                 		st	AL,@(0x0006,Y)
+ 354 0001 06 27       		.loc 1 260 0
+ 258:../mesh_common/client/gaia/gaia_client.c **** 
+ 259:../mesh_common/client/gaia/gaia_client.c **** }
+ 355                 	AL,@$XAP_UY
+ 356 0002 00 00 00 15 		add	AL,#0x0002
+ 357 0004 02 34       		st	AL,@(0x0001,Y)
+ 358 0005 01 27       		.loc 1 263 0
+ 260:../mesh_common/client/gaia/gaia_client.c ****               GaiaClientSendAcknowledgement(device_id, GAIA_STATUS_NOT_SUPPORTED);
+ 261:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 262:../mesh_common/client/gaia/gaia_client.c ****         }
+ 359                 	X,@(0x0001,Y)
+ 360 0006 01 1B       		ld	AL,#0x0000
+ 361 0007 00 14       		st	AL,@(0,X)
+ 362 0008 00 26       		ld	AL,@(0x0001,Y)
+ 363 0009 01 17       		ld	X,@$XAP_AL
+ 364 000a 00 00 00 19 		add	X,#0x0001
+ 365 000c 01 38       		st	X,@(0x0001,Y)
+ 366 000d 01 2B       		.loc 1 264 0
+ 263:../mesh_common/client/gaia/gaia_client.c **** efault:
+ 367                 	0x0001,Y)
+ 368 000e 01 1B       		ld	AL,#0x000a
+ 369 000f 0A 14       		st	AL,@(0,X)
+ 370 0010 00 26       		ld	AL,@(0x0001,Y)
+ 371 0011 01 17       		ld	X,@$XAP_AL
+ 372 0012 00 00 00 19 		add	X,#0x0001
+ 373 0014 01 38       		st	X,@(0x0001,Y)
+ 374 0015 01 2B       		.loc 1 265 0
+ 264:../mesh_common/client/gaia/gaia_client.c **** d, command_id,
+ 375                 	0x0001,Y)
+ 376 0016 01 1B       		ld	AL,#0x0006
+ 377 0017 06 14       		st	AL,@(0,X)
+ 378 0018 00 26       		ld	AL,@(0x0001,Y)
+ 379 0019 01 17       		ld	X,@$XAP_AL
+ 380 001a 00 00 00 19 		add	X,#0x0001
+ 381 001c 01 38       		st	X,@(0x0001,Y)
+ 382 001d 01 2B       		.loc 1 266 0
+ 265:../mesh_common/client/gaia/gaia_client.c **** 
+ 383                 	0x0001,Y)
+ 384 001e 01 1B       		ld	AL,#0x0040
+ 385 001f 40 14       		st	AL,@(0,X)
+ 386 0020 00 26       		ld	AL,@(0x0001,Y)
+ 387 0021 01 17       		ld	X,@$XAP_AL
+ 388 0022 00 00 00 19 		add	X,#0x0001
+ 389 0024 01 38       		st	X,@(0x0001,Y)
+ 390 0025 01 2B       		.loc 1 268 0
+ 266:../mesh_common/client/gaia/gaia_client.c **** break;
+ 267:../mesh_common/client/gaia/gaia_client.c **** 
+ 391                 	$XAP_UY
+ 392 0026 00 00 00 15 		add	AL,#0x0002
+ 393 0028 02 34       		st	AL,@(0,Y)
+ 394 0029 00 27       		ld	AL,@(0x0006,Y)
+ 395 002a 06 17       		ld	AH,#0x0004
+ 396 002b 04 10       		bsr	GaiaWriteCommandEndpoint
+ 397 002c 00 00 00 00 		.loc 1 269 0
+ 397      00 9C 
+ 268:../mesh_common/client/gaia/gaia_client.c ****           default:
+ 398                 		#0x0009
+ 399 002f F7 0F       	.LFE7:
+ 400                 		.size	GaiaClientSendConnectPacket, .-GaiaClientSendConnectPacket
+ 401                 		.global	__size_of_GaiaClientSendConnectPacket
+ 402                 		.equ	__size_of_GaiaClientSendConnectPacket,. - GaiaClientSendConnectPacket
+ 403                 		.section	.text.GaiaClientSendAcknowledgement,"ax",@progbits
+ 404                 		.global	GaiaClientSendAcknowledgement
+ 405                 		.type	GaiaClientSendAcknowledgement, @function
+ 406                 	GaiaClientSendAcknowledgement:
+ 407                 	.LFB8:
+ 408                 		.loc 1 284 0
+ 269:../mesh_common/client/gaia/gaia_client.c ****            break;
+ 270:../mesh_common/client/gaia/gaia_client.c ****         }
+ 271:../mesh_common/client/gaia/gaia_client.c ****     }
+ 272:../mesh_common/client/gaia/gaia_client.c ****     else
+ 273:../mesh_common/client/gaia/gaia_client.c ****     {
+ 274:../mesh_common/client/gaia/gaia_client.c ****         switch (command_id & GAIA_COMMAND_TYPE_MASK)
+ 275:../mesh_common/client/gaia/gaia_client.c ****         {
+ 276:../mesh_common/client/gaia/gaia_client.c ****             case GAIA_COMMAND_TYPE_NOTIFICATION:
+ 277:../mesh_common/client/gaia/gaia_client.c ****                 gaiaHandleNotificationCommand(device_id, command_id,
+ 278:../mesh_common/client/gaia/gaia_client.c ****                                               payload_len, payload);
+ 279:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 280:../mesh_common/client/gaia/gaia_client.c **** 
+ 281:../mesh_common/client/gaia/gaia_client.c ****             default:
+ 282:../mesh_common/client/gaia/gaia_client.c ****                 GaiaClientSendAcknowledgement(device_id, GAIA_STATUS_NOT_SUPPORTED);
+ 283:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 409                 	000b
+ 410 0000 F5 0B       	.LCFI6:
+ 411                 		st	AL,@(0x0007,Y)
+ 412 0001 07 27       		st	AH,@(0x0008,Y)
+ 413 0002 08 23       		.loc 1 286 0
+ 284:../mesh_common/client/gaia/gaia_client.c **** 
+ 285:../mesh_common/client/gaia/gaia_client.c **** }
+ 414                 	L,@$XAP_UY
+ 415 0003 00 00 00 15 		add	AL,#0x0002
+ 416 0005 02 34       		st	AL,@(0x0001,Y)
+ 417 0006 01 27       		.loc 1 288 0
+ 286:../mesh_common/client/gaia/gaia_client.c ****               GaiaClientSendAcknowledgement(device_id, GAIA_STATUS_NOT_SUPPORTED);
+ 287:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 418                 	X,@(0x0001,Y)
+ 419 0007 01 1B       		ld	AL,#0x0000
+ 420 0008 00 14       		st	AL,@(0,X)
+ 421 0009 00 26       		ld	AL,@(0x0001,Y)
+ 422 000a 01 17       		ld	X,@$XAP_AL
+ 423 000b 00 00 00 19 		add	X,#0x0001
+ 424 000d 01 38       		st	X,@(0x0001,Y)
+ 425 000e 01 2B       		.loc 1 289 0
+ 288:../mesh_common/client/gaia/gaia_client.c ****           default:
+ 426                 	0x0001,Y)
+ 427 000f 01 1B       		ld	AL,#0x000a
+ 428 0010 0A 14       		st	AL,@(0,X)
+ 429 0011 00 26       		ld	AL,@(0x0001,Y)
+ 430 0012 01 17       		ld	X,@$XAP_AL
+ 431 0013 00 00 00 19 		add	X,#0x0001
+ 432 0015 01 38       		st	X,@(0x0001,Y)
+ 433 0016 01 2B       		.loc 1 290 0
+ 289:../mesh_common/client/gaia/gaia_client.c **** d, command_id,
+ 434                 	0x0001,Y)
+ 435 0017 01 1B       		ld	AL,#0x0086
+ 436 0018 01 00 86 14 		st	AL,@(0,X)
+ 437 001a 00 26       		ld	AL,@(0x0001,Y)
+ 438 001b 01 17       		ld	X,@$XAP_AL
+ 439 001c 00 00 00 19 		add	X,#0x0001
+ 440 001e 01 38       		st	X,@(0x0001,Y)
+ 441 001f 01 2B       		.loc 1 291 0
+ 290:../mesh_common/client/gaia/gaia_client.c **** 
+ 442                 	0x0001,Y)
+ 443 0020 01 1B       		ld	AL,#0x0042
+ 444 0021 42 14       		st	AL,@(0,X)
+ 445 0022 00 26       		ld	AL,@(0x0001,Y)
+ 446 0023 01 17       		ld	X,@$XAP_AL
+ 447 0024 00 00 00 19 		add	X,#0x0001
+ 448 0026 01 38       		st	X,@(0x0001,Y)
+ 449 0027 01 2B       		.loc 1 292 0
+ 291:../mesh_common/client/gaia/gaia_client.c **** break;
+ 450                 	0x0001,Y)
+ 451 0028 01 1B       		ld	AL,@(0x0008,Y)
+ 452 0029 08 17       		st	AL,@(0,X)
+ 453 002a 00 26       		ld	AL,@(0x0001,Y)
+ 454 002b 01 17       		ld	X,@$XAP_AL
+ 455 002c 00 00 00 19 		add	X,#0x0001
+ 456 002e 01 38       		st	X,@(0x0001,Y)
+ 457 002f 01 2B       		.loc 1 294 0
+ 292:../mesh_common/client/gaia/gaia_client.c ****             default:
+ 293:../mesh_common/client/gaia/gaia_client.c ****             break;
+ 458                 	$XAP_UY
+ 459 0030 00 00 00 15 		add	AL,#0x0002
+ 460 0032 02 34       		st	AL,@(0,Y)
+ 461 0033 00 27       		ld	AL,@(0x0007,Y)
+ 462 0034 07 17       		ld	AH,#0x0005
+ 463 0035 05 10       		bsr	GaiaWriteCommandEndpoint
+ 464 0036 00 00 00 00 		.loc 1 296 0
+ 464      00 9C 
+ 294:../mesh_common/client/gaia/gaia_client.c ****       }
+ 295:../mesh_common/client/gaia/gaia_client.c ****     }
+ 465                 	0x0008,Y)
+ 466 0039 08 9B       		beq	.L35
+ 467 003a 00 00 00 00 		.loc 1 298 0
+ 467      00 F4 
+ 296:../mesh_common/client/gaia/gaia_client.c ****   else
+ 297:../mesh_common/client/gaia/gaia_client.c ****     {
+ 468                 		AL,@(0x0007,Y)
+ 469 003d 07 17       		bsr	GaiaClientSendDisconnectPacket
+ 470 003e 00 00 00 00 	.L35:
+ 470      00 9C 
+ 471                 		.loc 1 300 0
+ 298:../mesh_common/client/gaia/gaia_client.c ****       switch (command_id & GAIA_COMMAND_TYPE_MASK)
+ 299:../mesh_common/client/gaia/gaia_client.c ****         {
+ 472                 	vel	#0x000b
+ 473 0041 F5 0F       	.LFE8:
+ 474                 		.size	GaiaClientSendAcknowledgement, .-GaiaClientSendAcknowledgement
+ 475                 		.global	__size_of_GaiaClientSendAcknowledgement
+ 476                 		.equ	__size_of_GaiaClientSendAcknowledgement,. - GaiaClientSendAcknowledgement
+ 477                 		.section	.debug_frame,"",@progbits
+ 478                 	.Lframe0:
+ 479                 		.4byte	.LECIE0-.LSCIE0
+ 480 0000 00 00 00 00 	.LSCIE0:
+ 481                 		.4byte	0xffffffff
+ 482 0002 FF FF FF FF 		.1byte	0x1
+ 483 0004 01          		.ascii "\000"
+ 484 0004 00          		.1byte	0x1
+ 485 0005 01          		.1byte	0x7f
+ 486 0005 7F          		.1byte	0x3
+ 487 0006 03          		.1byte	0xc
+ 488 0006 0C          		.1byte	0x5
+ 489 0007 05          		.1byte	0x0
+ 490 0007 00          		.p2align	2
+ 491                 	.LECIE0:
+ 492                 	.LSFDE0:
+ 493                 		.4byte	.LEFDE0-.LASFDE0
+ 494 0008 00 00 00 00 	.LASFDE0:
+ 495                 		.4byte	.Lframe0
+ 496 000a 00 00 00 00 		.4byte	.LFB2
+ 497 000c 00 00 00 00 		.4byte	.LFE2-.LFB2
+ 498 000e 00 00 00 00 		.1byte	0x4
+ 499 0010 41          		.4byte	.LCFI0-.LFB2
+ 500                 		.1byte	0xe
+ 501 0010 0E          		.1byte	0x6
+ 502 0011 06          		.1byte	0x83
+ 503 0011 83          		.1byte	0x2
+ 504 0012 02          		.1byte	0x82
+ 505 0012 82          		.1byte	0x1
+ 506 0013 01          		.p2align	2
+ 507 0013 00          	.LEFDE0:
+ 508                 	.LSFDE2:
+ 509                 		.4byte	.LEFDE2-.LASFDE2
+ 510 0014 00 00 00 00 	.LASFDE2:
+ 511                 		.4byte	.Lframe0
+ 512 0016 00 00 00 00 		.4byte	.LFB3
+ 513 0018 00 00 00 00 		.4byte	.LFE3-.LFB3
+ 514 001a 00 00 00 00 		.1byte	0x4
+ 515 001c 41          		.4byte	.LCFI1-.LFB3
+ 516                 		.1byte	0xe
+ 517 001c 0E          		.1byte	0x6
+ 518 001d 06          		.1byte	0x83
+ 519 001d 83          		.1byte	0x2
+ 520 001e 02          		.1byte	0x82
+ 521 001e 82          		.1byte	0x1
+ 522 001f 01          		.p2align	2
+ 523 001f 00          	.LEFDE2:
+ 524                 	.LSFDE4:
+ 525                 		.4byte	.LEFDE4-.LASFDE4
+ 526 0020 00 00 00 00 	.LASFDE4:
+ 527                 		.4byte	.Lframe0
+ 528 0022 00 00 00 00 		.4byte	.LFB4
+ 529 0024 00 00 00 00 		.4byte	.LFE4-.LFB4
+ 530 0026 00 00 00 00 		.1byte	0x4
+ 531 0028 41          		.4byte	.LCFI2-.LFB4
+ 532                 		.1byte	0xe
+ 533 0028 0E          		.1byte	0x7
+ 534 0029 07          		.1byte	0x83
+ 535 0029 83          		.1byte	0x2
+ 536 002a 02          		.1byte	0x82
+ 537 002a 82          		.1byte	0x1
+ 538 002b 01          		.p2align	2
+ 539 002b 00          	.LEFDE4:
+ 540                 	.LSFDE6:
+ 541                 		.4byte	.LEFDE6-.LASFDE6
+ 542 002c 00 00 00 00 	.LASFDE6:
+ 543                 		.4byte	.Lframe0
+ 544 002e 00 00 00 00 		.4byte	.LFB5
+ 545 0030 00 00 00 00 		.4byte	.LFE5-.LFB5
+ 546 0032 00 00 00 00 		.1byte	0x4
+ 547 0034 41          		.4byte	.LCFI3-.LFB5
+ 548                 		.1byte	0xe
+ 549 0034 0E          		.1byte	0x1a
+ 550 0035 1A          		.1byte	0x83
+ 551 0035 83          		.1byte	0x2
+ 552 0036 02          		.1byte	0x82
+ 553 0036 82          		.1byte	0x1
+ 554 0037 01          		.p2align	2
+ 555 0037 00          	.LEFDE6:
+ 556                 	.LSFDE8:
+ 557                 		.4byte	.LEFDE8-.LASFDE8
+ 558 0038 00 00 00 00 	.LASFDE8:
+ 559                 		.4byte	.Lframe0
+ 560 003a 00 00 00 00 		.4byte	.LFB6
+ 561 003c 00 00 00 00 		.4byte	.LFE6-.LFB6
+ 562 003e 00 00 00 00 		.1byte	0x4
+ 563 0040 41          		.4byte	.LCFI4-.LFB6
+ 564                 		.1byte	0xe
+ 565 0040 0E          		.1byte	0x9
+ 566 0041 09          		.1byte	0x83
+ 567 0041 83          		.1byte	0x2
+ 568 0042 02          		.1byte	0x82
+ 569 0042 82          		.1byte	0x1
+ 570 0043 01          		.p2align	2
+ 571 0043 00          	.LEFDE8:
+ 572                 	.LSFDE10:
+ 573                 		.4byte	.LEFDE10-.LASFDE10
+ 574 0044 00 00 00 00 	.LASFDE10:
+ 575                 		.4byte	.Lframe0
+ 576 0046 00 00 00 00 		.4byte	.LFB7
+ 577 0048 00 00 00 00 		.4byte	.LFE7-.LFB7
+ 578 004a 00 00 00 00 		.1byte	0x4
+ 579 004c 41          		.4byte	.LCFI5-.LFB7
+ 580                 		.1byte	0xe
+ 581 004c 0E          		.1byte	0x9
+ 582 004d 09          		.1byte	0x83
+ 583 004d 83          		.1byte	0x2
+ 584 004e 02          		.1byte	0x82
+ 585 004e 82          		.1byte	0x1
+ 586 004f 01          		.p2align	2
+ 587 004f 00          	.LEFDE10:
+ 588                 	.LSFDE12:
+ 589                 		.4byte	.LEFDE12-.LASFDE12
+ 590 0050 00 00 00 00 	.LASFDE12:
+ 591                 		.4byte	.Lframe0
+ 592 0052 00 00 00 00 		.4byte	.LFB8
+ 593 0054 00 00 00 00 		.4byte	.LFE8-.LFB8
+ 594 0056 00 00 00 00 		.1byte	0x4
+ 595 0058 41          		.4byte	.LCFI6-.LFB8
+ 596                 		.1byte	0xe
+ 597 0058 0E          		.1byte	0xb
+ 598 0059 0B          		.1byte	0x83
+ 599 0059 83          		.1byte	0x2
+ 600 005a 02          		.1byte	0x82
+ 601 005a 82          		.1byte	0x1
+ 602 005b 01          		.p2align	2
+ 603 005b 00          	.LEFDE12:
+ 604                 		.text
+ 605                 	.Letext0:
+ 606                 		.section	.debug_loc,"",@progbits
+ 607                 	.Ldebug_loc0:
+ 608                 	.LLST0:
+ 609                 		.4byte	.LFB2
+ 610 0000 00 00 00 00 		.4byte	.LCFI0
+ 611 0002 00 00 00 00 		.2byte	0x1
+ 612 0004 00 01       		.1byte	0x55
+ 613 0005 55          		.4byte	.LCFI0
+ 614 0005 00 00 00 00 		.4byte	.LFE2
+ 615 0007 00 00 00 00 		.2byte	0x2
+ 616 0009 00 02       		.1byte	0x75
+ 617 000a 75          		.1byte	0x6
+ 618 000b 06          		.4byte	0x0
+ 619 000b 00 00 00 00 		.4byte	0x0
+ 620 000d 00 00 00 00 	.LLST1:
+ 621                 		.4byte	.LFB3
+ 622 000f 00 00 00 00 		.4byte	.LCFI1
+ 623 0011 00 00 00 00 		.2byte	0x1
+ 624 0013 00 01       		.1byte	0x55
+ 625 0014 55          		.4byte	.LCFI1
+ 626 0015 00 00 00 00 		.4byte	.LFE3
+ 627 0017 00 00 00 00 		.2byte	0x2
+ 628 0019 00 02       		.1byte	0x75
+ 629 001a 75          		.1byte	0x6
+ 630 001a 06          		.4byte	0x0
+ 631 001b 00 00 00 00 		.4byte	0x0
+ 632 001d 00 00 00 00 	.LLST2:
+ 633                 		.4byte	.LFB4
+ 634 001f 00 00 00 00 		.4byte	.LCFI2
+ 635 0021 00 00 00 00 		.2byte	0x1
+ 636 0023 00 01       		.1byte	0x55
+ 637 0024 55          		.4byte	.LCFI2
+ 638 0024 00 00 00 00 		.4byte	.LFE4
+ 639 0026 00 00 00 00 		.2byte	0x2
+ 640 0028 00 02       		.1byte	0x75
+ 641 0029 75          		.1byte	0x7
+ 642 002a 07          		.4byte	0x0
+ 643 002a 00 00 00 00 		.4byte	0x0
+ 644 002c 00 00 00 00 	.LLST3:
+ 645                 		.4byte	.LFB5
+ 646 002e 00 00 00 00 		.4byte	.LCFI3
+ 647 0030 00 00 00 00 		.2byte	0x1
+ 648 0032 00 01       		.1byte	0x55
+ 649 0033 55          		.4byte	.LCFI3
+ 650 0034 00 00 00 00 		.4byte	.LFE5
+ 651 0036 00 00 00 00 		.2byte	0x2
+ 652 0038 00 02       		.1byte	0x75
+ 653 0039 75          		.1byte	0x1a
+ 654 0039 1A          		.4byte	0x0
+ 655 003a 00 00 00 00 		.4byte	0x0
+ 656 003c 00 00 00 00 	.LLST4:
+ 657                 		.4byte	.LFB6
+ 658 003e 00 00 00 00 		.4byte	.LCFI4
+ 659 0040 00 00 00 00 		.2byte	0x1
+ 660 0042 00 01       		.1byte	0x55
+ 661 0043 55          		.4byte	.LCFI4
+ 662 0043 00 00 00 00 		.4byte	.LFE6
+ 663 0045 00 00 00 00 		.2byte	0x2
+ 664 0047 00 02       		.1byte	0x75
+ 665 0048 75          		.1byte	0x9
+ 666 0049 09          		.4byte	0x0
+ 667 0049 00 00 00 00 		.4byte	0x0
+ 668 004b 00 00 00 00 	.LLST5:
+ 669                 		.4byte	.LFB7
+ 670 004d 00 00 00 00 		.4byte	.LCFI5
+ 671 004f 00 00 00 00 		.2byte	0x1
+ 672 0051 00 01       		.1byte	0x55
+ 673 0052 55          		.4byte	.LCFI5
+ 674 0053 00 00 00 00 		.4byte	.LFE7
+ 675 0055 00 00 00 00 		.2byte	0x2
+ 676 0057 00 02       		.1byte	0x75
+ 677 0058 75          		.1byte	0x9
+ 678 0058 09          		.4byte	0x0
+ 679 0059 00 00 00 00 		.4byte	0x0
+ 680 005b 00 00 00 00 	.LLST6:
+ 681                 		.4byte	.LFB8
+ 682 005d 00 00 00 00 		.4byte	.LCFI6
+ 683 005f 00 00 00 00 		.2byte	0x1
+ 684 0061 00 01       		.1byte	0x55
+ 685 0062 55          		.4byte	.LCFI6
+ 686 0062 00 00 00 00 		.4byte	.LFE8
+ 687 0064 00 00 00 00 		.2byte	0x2
+ 688 0066 00 02       		.1byte	0x75
+ 689 0067 75          		.1byte	0xb
+ 690 0068 0B          		.4byte	0x0
+ 691 0068 00 00 00 00 		.4byte	0x0
+ 692 006a 00 00 00 00 		.file 2 "C:/CSR102x_SDK-3.1.1/tools/include/CSR102x_A06/uenergy_types.h"
+ 693                 		.file 3 "../mesh_common/components/connection_manager/cm_types.h"
+ 694                 		.section	.debug_info
+ 695                 		.4byte	0x306
+ 696 0000 00 00 03 06 		.2byte	0x2
+ 697 0002 00 02       		.4byte	.Ldebug_abbrev0
+ 698 0003 00 00 00 00 		.1byte	0x4
+ 699 0005 04          		.1byte	0x1
+ 700 0005 01          		.4byte	.LASF29
+ 701 0006 00 00 00 00 		.1byte	0x1
+ 702 0008 01          		.4byte	.LASF30
+ 703 0008 00 00 00 00 		.4byte	.LASF31
+ 704 000a 00 00 00 00 		.4byte	0x0
+ 705 000c 00 00 00 00 		.4byte	0x0
+ 706 000e 00 00 00 00 		.4byte	.Ldebug_ranges0+0x0
+ 707 0010 00 00 00 00 		.4byte	.Ldebug_line0
+ 708 0012 00 00 00 00 		.1byte	0x2
+ 709 0014 02          		.1byte	0x2
+ 710 0015 02          		.1byte	0x5
+ 711 0015 05          		.ascii "int\000"
+ 712 0016 69 6E 74 00 		.1byte	0x3
+ 713 0018 03          		.1byte	0x2
+ 714 0018 02          		.1byte	0x7
+ 715 0019 07          		.4byte	.LASF0
+ 716 0019 00 00 00 00 		.1byte	0x3
+ 717 001b 03          		.1byte	0x2
+ 718 001c 02          		.1byte	0x5
+ 719 001c 05          		.4byte	.LASF1
+ 720 001d 00 00 00 00 		.1byte	0x3
+ 721 001f 03          		.1byte	0x2
+ 722 001f 02          		.1byte	0x7
+ 723 0020 07          		.4byte	.LASF2
+ 724 0020 00 00 00 00 		.1byte	0x3
+ 725 0022 03          		.1byte	0x4
+ 726 0023 04          		.1byte	0x5
+ 727 0023 05          		.4byte	.LASF3
+ 728 0024 00 00 00 00 		.1byte	0x3
+ 729 0026 03          		.1byte	0x4
+ 730 0026 04          		.1byte	0x7
+ 731 0027 07          		.4byte	.LASF4
+ 732 0027 00 00 00 00 		.1byte	0x3
+ 733 0029 03          		.1byte	0x8
+ 734 002a 08          		.1byte	0x5
+ 735 002a 05          		.4byte	.LASF5
+ 736 002b 00 00 00 00 		.1byte	0x3
+ 737 002d 03          		.1byte	0x8
+ 738 002d 08          		.1byte	0x7
+ 739 002e 07          		.4byte	.LASF6
+ 740 002e 00 00 00 00 		.1byte	0x4
+ 741 0030 04          		.4byte	.LASF8
+ 742 0031 00 00 00 00 		.1byte	0x2
+ 743 0033 02          		.1byte	0x21
+ 744 0033 21          		.4byte	0x6c
+ 745 0034 00 00 00 6C 		.1byte	0x3
+ 746 0036 03          		.1byte	0x2
+ 747 0036 02          		.1byte	0x8
+ 748 0037 08          		.4byte	.LASF7
+ 749 0037 00 00 00 00 		.1byte	0x4
+ 750 0039 04          		.4byte	.LASF9
+ 751 003a 00 00 00 00 		.1byte	0x2
+ 752 003c 02          		.1byte	0x24
+ 753 003c 24          		.4byte	0x3e
+ 754 003d 00 00 00 3E 		.1byte	0x3
+ 755 003f 03          		.1byte	0x2
+ 756 003f 02          		.1byte	0x6
+ 757 0040 06          		.4byte	.LASF10
+ 758 0040 00 00 00 00 		.1byte	0x5
+ 759 0042 05          		.1byte	0x2
+ 760 0043 02          		.4byte	0x61
+ 761 0043 00 00 00 61 		.1byte	0x6
+ 762 0045 06          		.1byte	0x2
+ 763 0046 02          		.1byte	0x7
+ 764 0046 07          		.1byte	0x4
+ 765 0047 04          		.4byte	.LASF11
+ 766 0047 00 00 00 00 		.1byte	0x3
+ 767 0049 03          		.1byte	0x5c
+ 768 004a 5C          		.4byte	0x73
+ 769 004a 00 00 00 73 		.1byte	0x3
+ 770 004c 03          		.1byte	0x2
+ 771 004d 02          		.1byte	0x8
+ 772 004d 08          		.4byte	.LASF12
+ 773 004e 00 00 00 00 		.1byte	0x7
+ 774 0050 07          		.4byte	.LASF17
+ 775 0050 00 00 00 00 		.1byte	0x1
+ 776 0052 01          		.1byte	0x38
+ 777 0053 38          		.1byte	0x1
+ 778 0053 01          		.4byte	.LFB2
+ 779 0054 00 00 00 00 		.4byte	.LFE2
+ 780 0056 00 00 00 00 		.4byte	.LLST0
+ 781 0058 00 00 00 00 		.4byte	0xff
+ 782 005a 00 00 00 FF 		.1byte	0x8
+ 783 005c 08          		.4byte	.LASF13
+ 784 005c 00 00 00 00 		.1byte	0x1
+ 785 005e 01          		.1byte	0x34
+ 786 005f 34          		.4byte	0x8e
+ 787 005f 00 00 00 8E 		.1byte	0x2
+ 788 0061 02          		.1byte	0x76
+ 789 0062 76          		.1byte	0x2
+ 790 0062 02          		.1byte	0x8
+ 791 0063 08          		.4byte	.LASF14
+ 792 0063 00 00 00 00 		.1byte	0x1
+ 793 0065 01          		.1byte	0x35
+ 794 0066 35          		.4byte	0x73
+ 795 0066 00 00 00 73 		.1byte	0x2
+ 796 0068 02          		.1byte	0x76
+ 797 0069 76          		.1byte	0x3
+ 798 0069 03          		.1byte	0x8
+ 799 006a 08          		.4byte	.LASF15
+ 800 006a 00 00 00 00 		.1byte	0x1
+ 801 006c 01          		.1byte	0x36
+ 802 006d 36          		.4byte	0x73
+ 803 006d 00 00 00 73 		.1byte	0x2
+ 804 006f 02          		.1byte	0x91
+ 805 0070 91          		.1byte	0x0
+ 806 0070 00          		.1byte	0x8
+ 807 0071 08          		.4byte	.LASF16
+ 808 0071 00 00 00 00 		.1byte	0x1
+ 809 0073 01          		.1byte	0x37
+ 810 0074 37          		.4byte	0x85
+ 811 0074 00 00 00 85 		.1byte	0x2
+ 812 0076 02          		.1byte	0x91
+ 813 0077 91          		.1byte	0x1
+ 814 0077 01          		.1byte	0x9
+ 815 0078 09          		.4byte	.LASF20
+ 816 0078 00 00 00 00 		.1byte	0x1
+ 817 007a 01          		.1byte	0x39
+ 818 007b 39          		.4byte	0x61
+ 819 007b 00 00 00 61 		.1byte	0x2
+ 820 007d 02          		.1byte	0x76
+ 821 007e 76          		.1byte	0x1
+ 822 007e 01          		.1byte	0x0
+ 823 007f 00          		.1byte	0x7
+ 824 007f 07          		.4byte	.LASF18
+ 825 0080 00 00 00 00 		.1byte	0x1
+ 826 0082 01          		.1byte	0x62
+ 827 0082 62          		.1byte	0x1
+ 828 0083 01          		.4byte	.LFB3
+ 829 0083 00 00 00 00 		.4byte	.LFE3
+ 830 0085 00 00 00 00 		.4byte	.LLST1
+ 831 0087 00 00 00 00 		.4byte	0x150
+ 832 0089 00 00 01 50 		.1byte	0x8
+ 833 008b 08          		.4byte	.LASF13
+ 834 008c 00 00 00 00 		.1byte	0x1
+ 835 008e 01          		.1byte	0x5e
+ 836 008e 5E          		.4byte	0x8e
+ 837 008f 00 00 00 8E 		.1byte	0x2
+ 838 0091 02          		.1byte	0x76
+ 839 0091 76          		.1byte	0x1
+ 840 0092 01          		.1byte	0x8
+ 841 0092 08          		.4byte	.LASF14
+ 842 0093 00 00 00 00 		.1byte	0x1
+ 843 0095 01          		.1byte	0x5f
+ 844 0095 5F          		.4byte	0x73
+ 845 0096 00 00 00 73 		.1byte	0x2
+ 846 0098 02          		.1byte	0x76
+ 847 0098 76          		.1byte	0x2
+ 848 0099 02          		.1byte	0x8
+ 849 0099 08          		.4byte	.LASF15
+ 850 009a 00 00 00 00 		.1byte	0x1
+ 851 009c 01          		.1byte	0x60
+ 852 009c 60          		.4byte	0x73
+ 853 009d 00 00 00 73 		.1byte	0x2
+ 854 009f 02          		.1byte	0x91
+ 855 009f 91          		.1byte	0x0
+ 856 00a0 00          		.1byte	0x8
+ 857 00a0 08          		.4byte	.LASF16
+ 858 00a1 00 00 00 00 		.1byte	0x1
+ 859 00a3 01          		.1byte	0x61
+ 860 00a3 61          		.4byte	0x85
+ 861 00a4 00 00 00 85 		.1byte	0x2
+ 862 00a6 02          		.1byte	0x91
+ 863 00a6 91          		.1byte	0x1
+ 864 00a7 01          		.1byte	0x0
+ 865 00a7 00          		.1byte	0xa
+ 866 00a8 0A          		.1byte	0x1
+ 867 00a8 01          		.4byte	.LASF21
+ 868 00a9 00 00 00 00 		.1byte	0x1
+ 869 00ab 01          		.1byte	0x85
+ 870 00ab 85          		.1byte	0x1
+ 871 00ac 01          		.4byte	.LFB4
+ 872 00ac 00 00 00 00 		.4byte	.LFE4
+ 873 00ae 00 00 00 00 		.4byte	.LLST2
+ 874 00b0 00 00 00 00 		.4byte	0x1a2
+ 875 00b2 00 00 01 A2 		.1byte	0x8
+ 876 00b4 08          		.4byte	.LASF13
+ 877 00b5 00 00 00 00 		.1byte	0x1
+ 878 00b7 01          		.1byte	0x83
+ 879 00b7 83          		.4byte	0x8e
+ 880 00b8 00 00 00 8E 		.1byte	0x2
+ 881 00ba 02          		.1byte	0x76
+ 882 00ba 76          		.1byte	0x3
+ 883 00bb 03          		.1byte	0x8
+ 884 00bb 08          		.4byte	.LASF19
+ 885 00bc 00 00 00 00 		.1byte	0x1
+ 886 00be 01          		.1byte	0x84
+ 887 00be 84          		.4byte	0x73
+ 888 00bf 00 00 00 73 		.1byte	0x2
+ 889 00c1 02          		.1byte	0x76
+ 890 00c1 76          		.1byte	0x4
+ 891 00c2 04          		.1byte	0x8
+ 892 00c2 08          		.4byte	.LASF16
+ 893 00c3 00 00 00 00 		.1byte	0x1
+ 894 00c5 01          		.1byte	0x84
+ 895 00c5 84          		.4byte	0x85
+ 896 00c6 00 00 00 85 		.1byte	0x2
+ 897 00c8 02          		.1byte	0x91
+ 898 00c8 91          		.1byte	0x0
+ 899 00c9 00          		.1byte	0x9
+ 900 00c9 09          		.4byte	.LASF14
+ 901 00ca 00 00 00 00 		.1byte	0x1
+ 902 00cc 01          		.1byte	0x86
+ 903 00cc 86          		.4byte	0x73
+ 904 00cd 00 00 00 73 		.1byte	0x2
+ 905 00cf 02          		.1byte	0x76
+ 906 00cf 76          		.1byte	0x2
+ 907 00d0 02          		.1byte	0x0
+ 908 00d0 00          		.1byte	0xa
+ 909 00d1 0A          		.1byte	0x1
+ 910 00d1 01          		.4byte	.LASF22
+ 911 00d2 00 00 00 00 		.1byte	0x1
+ 912 00d4 01          		.1byte	0xc5
+ 913 00d4 C5          		.1byte	0x1
+ 914 00d5 01          		.4byte	.LFB5
+ 915 00d5 00 00 00 00 		.4byte	.LFE5
+ 916 00d7 00 00 00 00 		.4byte	.LLST3
+ 917 00d9 00 00 00 00 		.4byte	0x200
+ 918 00db 00 00 02 00 		.1byte	0x8
+ 919 00dd 08          		.4byte	.LASF13
+ 920 00de 00 00 00 00 		.1byte	0x1
+ 921 00e0 01          		.1byte	0xc3
+ 922 00e0 C3          		.4byte	0x8e
+ 923 00e1 00 00 00 8E 		.1byte	0x2
+ 924 00e3 02          		.1byte	0x76
+ 925 00e3 76          		.1byte	0x16
+ 926 00e4 16          		.1byte	0x8
+ 927 00e4 08          		.4byte	.LASF23
+ 928 00e5 00 00 00 00 		.1byte	0x1
+ 929 00e7 01          		.1byte	0xc4
+ 930 00e7 C4          		.4byte	0x73
+ 931 00e8 00 00 00 73 		.1byte	0x2
+ 932 00ea 02          		.1byte	0x76
+ 933 00ea 76          		.1byte	0x17
+ 934 00eb 17          		.1byte	0x8
+ 935 00eb 08          		.4byte	.LASF16
+ 936 00ec 00 00 00 00 		.1byte	0x1
+ 937 00ee 01          		.1byte	0xc4
+ 938 00ee C4          		.4byte	0x85
+ 939 00ef 00 00 00 85 		.1byte	0x2
+ 940 00f1 02          		.1byte	0x91
+ 941 00f1 91          		.1byte	0x0
+ 942 00f2 00          		.1byte	0x9
+ 943 00f2 09          		.4byte	.LASF24
+ 944 00f3 00 00 00 00 		.1byte	0x1
+ 945 00f5 01          		.1byte	0xc6
+ 946 00f5 C6          		.4byte	0x200
+ 947 00f6 00 00 02 00 		.1byte	0x2
+ 948 00f8 02          		.1byte	0x76
+ 949 00f8 76          		.1byte	0x2
+ 950 00f9 02          		.1byte	0xb
+ 951 00f9 0B          		.ascii "p\000"
+ 952 00fa 70 00       		.1byte	0x1
+ 953 00fb 01          		.1byte	0xc7
+ 954 00fb C7          		.4byte	0x85
+ 955 00fc 00 00 00 85 		.1byte	0x2
+ 956 00fe 02          		.1byte	0x76
+ 957 00fe 76          		.1byte	0x1
+ 958 00ff 01          		.1byte	0x0
+ 959 00ff 00          		.1byte	0xc
+ 960 0100 0C          		.4byte	0x61
+ 961 0100 00 00 00 61 		.4byte	0x210
+ 962 0102 00 00 02 10 		.1byte	0xd
+ 963 0104 0D          		.4byte	0x8b
+ 964 0105 00 00 00 8B 		.1byte	0x13
+ 965 0107 13          		.1byte	0x0
+ 966 0107 00          		.1byte	0xa
+ 967 0108 0A          		.1byte	0x1
+ 968 0108 01          		.4byte	.LASF25
+ 969 0109 00 00 00 00 		.1byte	0x1
+ 970 010b 01          		.1byte	0xe8
+ 971 010b E8          		.1byte	0x1
+ 972 010c 01          		.4byte	.LFB6
+ 973 010c 00 00 00 00 		.4byte	.LFE6
+ 974 010e 00 00 00 00 		.4byte	.LLST4
+ 975 0110 00 00 00 00 		.4byte	0x252
+ 976 0112 00 00 02 52 		.1byte	0x8
+ 977 0114 08          		.4byte	.LASF13
+ 978 0115 00 00 00 00 		.1byte	0x1
+ 979 0117 01          		.1byte	0xe7
+ 980 0117 E7          		.4byte	0x8e
+ 981 0118 00 00 00 8E 		.1byte	0x2
+ 982 011a 02          		.1byte	0x76
+ 983 011a 76          		.1byte	0x6
+ 984 011b 06          		.1byte	0x9
+ 985 011b 09          		.4byte	.LASF24
+ 986 011c 00 00 00 00 		.1byte	0x1
+ 987 011e 01          		.1byte	0xe9
+ 988 011e E9          		.4byte	0x252
+ 989 011f 00 00 02 52 		.1byte	0x2
+ 990 0121 02          		.1byte	0x76
+ 991 0121 76          		.1byte	0x2
+ 992 0122 02          		.1byte	0xb
+ 993 0122 0B          		.ascii "p\000"
+ 994 0123 70 00       		.1byte	0x1
+ 995 0124 01          		.1byte	0xea
+ 996 0124 EA          		.4byte	0x85
+ 997 0125 00 00 00 85 		.1byte	0x2
+ 998 0127 02          		.1byte	0x76
+ 999 0127 76          		.1byte	0x1
+ 1000 0128 01          		.1byte	0x0
+ 1001 0128 00          		.1byte	0xc
+ 1002 0129 0C          		.4byte	0x61
+ 1003 0129 00 00 00 61 		.4byte	0x262
+ 1004 012b 00 00 02 62 		.1byte	0xd
+ 1005 012d 0D          		.4byte	0x8b
+ 1006 012e 00 00 00 8B 		.1byte	0x3
+ 1007 0130 03          		.1byte	0x0
+ 1008 0130 00          		.1byte	0xe
+ 1009 0131 0E          		.1byte	0x1
+ 1010 0131 01          		.4byte	.LASF26
+ 1011 0132 00 00 00 00 		.1byte	0x1
+ 1012 0134 01          		.2byte	0x102
+ 1013 0134 01 02       		.1byte	0x1
+ 1014 0135 01          		.4byte	.LFB7
+ 1015 0136 00 00 00 00 		.4byte	.LFE7
+ 1016 0138 00 00 00 00 		.4byte	.LLST5
+ 1017 013a 00 00 00 00 		.4byte	0x2a8
+ 1018 013c 00 00 02 A8 		.1byte	0xf
+ 1019 013e 0F          		.4byte	.LASF13
+ 1020 013e 00 00 00 00 		.1byte	0x1
+ 1021 0140 01          		.2byte	0x101
+ 1022 0141 01 01       		.4byte	0x8e
+ 1023 0142 00 00 00 8E 		.1byte	0x2
+ 1024 0144 02          		.1byte	0x76
+ 1025 0144 76          		.1byte	0x6
+ 1026 0145 06          		.1byte	0x10
+ 1027 0145 10          		.4byte	.LASF24
+ 1028 0146 00 00 00 00 		.1byte	0x1
+ 1029 0148 01          		.2byte	0x103
+ 1030 0148 01 03       		.4byte	0x252
+ 1031 0149 00 00 02 52 		.1byte	0x2
+ 1032 014b 02          		.1byte	0x76
+ 1033 014c 76          		.1byte	0x2
+ 1034 014c 02          		.1byte	0x11
+ 1035 014d 11          		.ascii "p\000"
+ 1036 014d 70 00       		.1byte	0x1
+ 1037 014e 01          		.2byte	0x104
+ 1038 014f 01 04       		.4byte	0x85
+ 1039 0150 00 00 00 85 		.1byte	0x2
+ 1040 0152 02          		.1byte	0x76
+ 1041 0152 76          		.1byte	0x1
+ 1042 0153 01          		.1byte	0x0
+ 1043 0153 00          		.1byte	0xe
+ 1044 0154 0E          		.1byte	0x1
+ 1045 0154 01          		.4byte	.LASF27
+ 1046 0155 00 00 00 00 		.1byte	0x1
+ 1047 0157 01          		.2byte	0x11c
+ 1048 0157 01 1C       		.1byte	0x1
+ 1049 0158 01          		.4byte	.LFB8
+ 1050 0159 00 00 00 00 		.4byte	.LFE8
+ 1051 015b 00 00 00 00 		.4byte	.LLST6
+ 1052 015d 00 00 00 00 		.4byte	0x2fd
+ 1053 015f 00 00 02 FD 		.1byte	0xf
+ 1054 0161 0F          		.4byte	.LASF13
+ 1055 0161 00 00 00 00 		.1byte	0x1
+ 1056 0163 01          		.2byte	0x11a
+ 1057 0164 01 1A       		.4byte	0x8e
+ 1058 0165 00 00 00 8E 		.1byte	0x2
+ 1059 0167 02          		.1byte	0x76
+ 1060 0167 76          		.1byte	0x7
+ 1061 0168 07          		.1byte	0xf
+ 1062 0168 0F          		.4byte	.LASF28
+ 1063 0169 00 00 00 00 		.1byte	0x1
+ 1064 016b 01          		.2byte	0x11b
+ 1065 016b 01 1B       		.4byte	0x61
+ 1066 016c 00 00 00 61 		.1byte	0x2
+ 1067 016e 02          		.1byte	0x76
+ 1068 016f 76          		.1byte	0x8
+ 1069 016f 08          		.1byte	0x10
+ 1070 0170 10          		.4byte	.LASF24
+ 1071 0170 00 00 00 00 		.1byte	0x1
+ 1072 0172 01          		.2byte	0x11d
+ 1073 0173 01 1D       		.4byte	0x2fd
+ 1074 0174 00 00 02 FD 		.1byte	0x2
+ 1075 0176 02          		.1byte	0x76
+ 1076 0176 76          		.1byte	0x2
+ 1077 0177 02          		.1byte	0x11
+ 1078 0177 11          		.ascii "p\000"
+ 1079 0178 70 00       		.1byte	0x1
+ 1080 0179 01          		.2byte	0x11e
+ 1081 0179 01 1E       		.4byte	0x85
+ 1082 017a 00 00 00 85 		.1byte	0x2
+ 1083 017c 02          		.1byte	0x76
+ 1084 017d 76          		.1byte	0x1
+ 1085 017d 01          		.1byte	0x0
+ 1086 017e 00          		.1byte	0x12
+ 1087 017e 12          		.4byte	0x61
+ 1088 017f 00 00 00 61 		.1byte	0xd
+ 1089 0181 0D          		.4byte	0x8b
+ 1090 0181 00 00 00 8B 		.1byte	0x4
+ 1091 0183 04          		.1byte	0x0
+ 1092 0184 00          		.1byte	0x0
+ 1093 0184 00          		.section	.debug_abbrev
+ 1094                 		.1byte	0x1
+ 1095 0000 01          		.1byte	0x11
+ 1096 0000 11          		.1byte	0x1
+ 1097 0001 01          		.1byte	0x25
+ 1098 0001 25          		.1byte	0xe
+ 1099 0002 0E          		.1byte	0x13
+ 1100 0002 13          		.1byte	0xb
+ 1101 0003 0B          		.1byte	0x3
+ 1102 0003 03          		.1byte	0xe
+ 1103 0004 0E          		.1byte	0x1b
+ 1104 0004 1B          		.1byte	0xe
+ 1105 0005 0E          		.1byte	0x11
+ 1106 0005 11          		.1byte	0x1
+ 1107 0006 01          		.1byte	0x52
+ 1108 0006 52          		.1byte	0x1
+ 1109 0007 01          		.1byte	0x55
+ 1110 0007 55          		.1byte	0x6
+ 1111 0008 06          		.1byte	0x10
+ 1112 0008 10          		.1byte	0x6
+ 1113 0009 06          		.1byte	0x0
+ 1114 0009 00          		.1byte	0x0
+ 1115 000a 00          		.1byte	0x2
+ 1116 000a 02          		.1byte	0x24
+ 1117 000b 24          		.1byte	0x0
+ 1118 000b 00          		.1byte	0xb
+ 1119 000c 0B          		.1byte	0xb
+ 1120 000c 0B          		.1byte	0x3e
+ 1121 000d 3E          		.1byte	0xb
+ 1122 000d 0B          		.1byte	0x3
+ 1123 000e 03          		.1byte	0x8
+ 1124 000e 08          		.1byte	0x0
+ 1125 000f 00          		.1byte	0x0
+ 1126 000f 00          		.1byte	0x3
+ 1127 0010 03          		.1byte	0x24
+ 1128 0010 24          		.1byte	0x0
+ 1129 0011 00          		.1byte	0xb
+ 1130 0011 0B          		.1byte	0xb
+ 1131 0012 0B          		.1byte	0x3e
+ 1132 0012 3E          		.1byte	0xb
+ 1133 0013 0B          		.1byte	0x3
+ 1134 0013 03          		.1byte	0xe
+ 1135 0014 0E          		.1byte	0x0
+ 1136 0014 00          		.1byte	0x0
+ 1137 0015 00          		.1byte	0x4
+ 1138 0015 04          		.1byte	0x16
+ 1139 0016 16          		.1byte	0x0
+ 1140 0016 00          		.1byte	0x3
+ 1141 0017 03          		.1byte	0xe
+ 1142 0017 0E          		.1byte	0x3a
+ 1143 0018 3A          		.1byte	0xb
+ 1144 0018 0B          		.1byte	0x3b
+ 1145 0019 3B          		.1byte	0xb
+ 1146 0019 0B          		.1byte	0x49
+ 1147 001a 49          		.1byte	0x13
+ 1148 001a 13          		.1byte	0x0
+ 1149 001b 00          		.1byte	0x0
+ 1150 001b 00          		.1byte	0x5
+ 1151 001c 05          		.1byte	0xf
+ 1152 001c 0F          		.1byte	0x0
+ 1153 001d 00          		.1byte	0xb
+ 1154 001d 0B          		.1byte	0xb
+ 1155 001e 0B          		.1byte	0x49
+ 1156 001e 49          		.1byte	0x13
+ 1157 001f 13          		.1byte	0x0
+ 1158 001f 00          		.1byte	0x0
+ 1159 0020 00          		.1byte	0x6
+ 1160 0020 06          		.1byte	0x24
+ 1161 0021 24          		.1byte	0x0
+ 1162 0021 00          		.1byte	0xb
+ 1163 0022 0B          		.1byte	0xb
+ 1164 0022 0B          		.1byte	0x3e
+ 1165 0023 3E          		.1byte	0xb
+ 1166 0023 0B          		.1byte	0x0
+ 1167 0024 00          		.1byte	0x0
+ 1168 0024 00          		.1byte	0x7
+ 1169 0025 07          		.1byte	0x2e
+ 1170 0025 2E          		.1byte	0x1
+ 1171 0026 01          		.1byte	0x3
+ 1172 0026 03          		.1byte	0xe
+ 1173 0027 0E          		.1byte	0x3a
+ 1174 0027 3A          		.1byte	0xb
+ 1175 0028 0B          		.1byte	0x3b
+ 1176 0028 3B          		.1byte	0xb
+ 1177 0029 0B          		.1byte	0x27
+ 1178 0029 27          		.1byte	0xc
+ 1179 002a 0C          		.1byte	0x11
+ 1180 002a 11          		.1byte	0x1
+ 1181 002b 01          		.1byte	0x12
+ 1182 002b 12          		.1byte	0x1
+ 1183 002c 01          		.1byte	0x40
+ 1184 002c 40          		.1byte	0x6
+ 1185 002d 06          		.1byte	0x1
+ 1186 002d 01          		.1byte	0x13
+ 1187 002e 13          		.1byte	0x0
+ 1188 002e 00          		.1byte	0x0
+ 1189 002f 00          		.1byte	0x8
+ 1190 002f 08          		.1byte	0x5
+ 1191 0030 05          		.1byte	0x0
+ 1192 0030 00          		.1byte	0x3
+ 1193 0031 03          		.1byte	0xe
+ 1194 0031 0E          		.1byte	0x3a
+ 1195 0032 3A          		.1byte	0xb
+ 1196 0032 0B          		.1byte	0x3b
+ 1197 0033 3B          		.1byte	0xb
+ 1198 0033 0B          		.1byte	0x49
+ 1199 0034 49          		.1byte	0x13
+ 1200 0034 13          		.1byte	0x2
+ 1201 0035 02          		.1byte	0xa
+ 1202 0035 0A          		.1byte	0x0
+ 1203 0036 00          		.1byte	0x0
+ 1204 0036 00          		.1byte	0x9
+ 1205 0037 09          		.1byte	0x34
+ 1206 0037 34          		.1byte	0x0
+ 1207 0038 00          		.1byte	0x3
+ 1208 0038 03          		.1byte	0xe
+ 1209 0039 0E          		.1byte	0x3a
+ 1210 0039 3A          		.1byte	0xb
+ 1211 003a 0B          		.1byte	0x3b
+ 1212 003a 3B          		.1byte	0xb
+ 1213 003b 0B          		.1byte	0x49
+ 1214 003b 49          		.1byte	0x13
+ 1215 003c 13          		.1byte	0x2
+ 1216 003c 02          		.1byte	0xa
+ 1217 003d 0A          		.1byte	0x0
+ 1218 003d 00          		.1byte	0x0
+ 1219 003e 00          		.1byte	0xa
+ 1220 003e 0A          		.1byte	0x2e
+ 1221 003f 2E          		.1byte	0x1
+ 1222 003f 01          		.1byte	0x3f
+ 1223 0040 3F          		.1byte	0xc
+ 1224 0040 0C          		.1byte	0x3
+ 1225 0041 03          		.1byte	0xe
+ 1226 0041 0E          		.1byte	0x3a
+ 1227 0042 3A          		.1byte	0xb
+ 1228 0042 0B          		.1byte	0x3b
+ 1229 0043 3B          		.1byte	0xb
+ 1230 0043 0B          		.1byte	0x27
+ 1231 0044 27          		.1byte	0xc
+ 1232 0044 0C          		.1byte	0x11
+ 1233 0045 11          		.1byte	0x1
+ 1234 0045 01          		.1byte	0x12
+ 1235 0046 12          		.1byte	0x1
+ 1236 0046 01          		.1byte	0x40
+ 1237 0047 40          		.1byte	0x6
+ 1238 0047 06          		.1byte	0x1
+ 1239 0048 01          		.1byte	0x13
+ 1240 0048 13          		.1byte	0x0
+ 1241 0049 00          		.1byte	0x0
+ 1242 0049 00          		.1byte	0xb
+ 1243 004a 0B          		.1byte	0x34
+ 1244 004a 34          		.1byte	0x0
+ 1245 004b 00          		.1byte	0x3
+ 1246 004b 03          		.1byte	0x8
+ 1247 004c 08          		.1byte	0x3a
+ 1248 004c 3A          		.1byte	0xb
+ 1249 004d 0B          		.1byte	0x3b
+ 1250 004d 3B          		.1byte	0xb
+ 1251 004e 0B          		.1byte	0x49
+ 1252 004e 49          		.1byte	0x13
+ 1253 004f 13          		.1byte	0x2
+ 1254 004f 02          		.1byte	0xa
+ 1255 0050 0A          		.1byte	0x0
+ 1256 0050 00          		.1byte	0x0
+ 1257 0051 00          		.1byte	0xc
+ 1258 0051 0C          		.1byte	0x1
+ 1259 0052 01          		.1byte	0x1
+ 1260 0052 01          		.1byte	0x49
+ 1261 0053 49          		.1byte	0x13
+ 1262 0053 13          		.1byte	0x1
+ 1263 0054 01          		.1byte	0x13
+ 1264 0054 13          		.1byte	0x0
+ 1265 0055 00          		.1byte	0x0
+ 1266 0055 00          		.1byte	0xd
+ 1267 0056 0D          		.1byte	0x21
+ 1268 0056 21          		.1byte	0x0
+ 1269 0057 00          		.1byte	0x49
+ 1270 0057 49          		.1byte	0x13
+ 1271 0058 13          		.1byte	0x2f
+ 1272 0058 2F          		.1byte	0xb
+ 1273 0059 0B          		.1byte	0x0
+ 1274 0059 00          		.1byte	0x0
+ 1275 005a 00          		.1byte	0xe
+ 1276 005a 0E          		.1byte	0x2e
+ 1277 005b 2E          		.1byte	0x1
+ 1278 005b 01          		.1byte	0x3f
+ 1279 005c 3F          		.1byte	0xc
+ 1280 005c 0C          		.1byte	0x3
+ 1281 005d 03          		.1byte	0xe
+ 1282 005d 0E          		.1byte	0x3a
+ 1283 005e 3A          		.1byte	0xb
+ 1284 005e 0B          		.1byte	0x3b
+ 1285 005f 3B          		.1byte	0x5
+ 1286 005f 05          		.1byte	0x27
+ 1287 0060 27          		.1byte	0xc
+ 1288 0060 0C          		.1byte	0x11
+ 1289 0061 11          		.1byte	0x1
+ 1290 0061 01          		.1byte	0x12
+ 1291 0062 12          		.1byte	0x1
+ 1292 0062 01          		.1byte	0x40
+ 1293 0063 40          		.1byte	0x6
+ 1294 0063 06          		.1byte	0x1
+ 1295 0064 01          		.1byte	0x13
+ 1296 0064 13          		.1byte	0x0
+ 1297 0065 00          		.1byte	0x0
+ 1298 0065 00          		.1byte	0xf
+ 1299 0066 0F          		.1byte	0x5
+ 1300 0066 05          		.1byte	0x0
+ 1301 0067 00          		.1byte	0x3
+ 1302 0067 03          		.1byte	0xe
+ 1303 0068 0E          		.1byte	0x3a
+ 1304 0068 3A          		.1byte	0xb
+ 1305 0069 0B          		.1byte	0x3b
+ 1306 0069 3B          		.1byte	0x5
+ 1307 006a 05          		.1byte	0x49
+ 1308 006a 49          		.1byte	0x13
+ 1309 006b 13          		.1byte	0x2
+ 1310 006b 02          		.1byte	0xa
+ 1311 006c 0A          		.1byte	0x0
+ 1312 006c 00          		.1byte	0x0
+ 1313 006d 00          		.1byte	0x10
+ 1314 006d 10          		.1byte	0x34
+ 1315 006e 34          		.1byte	0x0
+ 1316 006e 00          		.1byte	0x3
+ 1317 006f 03          		.1byte	0xe
+ 1318 006f 0E          		.1byte	0x3a
+ 1319 0070 3A          		.1byte	0xb
+ 1320 0070 0B          		.1byte	0x3b
+ 1321 0071 3B          		.1byte	0x5
+ 1322 0071 05          		.1byte	0x49
+ 1323 0072 49          		.1byte	0x13
+ 1324 0072 13          		.1byte	0x2
+ 1325 0073 02          		.1byte	0xa
+ 1326 0073 0A          		.1byte	0x0
+ 1327 0074 00          		.1byte	0x0
+ 1328 0074 00          		.1byte	0x11
+ 1329 0075 11          		.1byte	0x34
+ 1330 0075 34          		.1byte	0x0
+ 1331 0076 00          		.1byte	0x3
+ 1332 0076 03          		.1byte	0x8
+ 1333 0077 08          		.1byte	0x3a
+ 1334 0077 3A          		.1byte	0xb
+ 1335 0078 0B          		.1byte	0x3b
+ 1336 0078 3B          		.1byte	0x5
+ 1337 0079 05          		.1byte	0x49
+ 1338 0079 49          		.1byte	0x13
+ 1339 007a 13          		.1byte	0x2
+ 1340 007a 02          		.1byte	0xa
+ 1341 007b 0A          		.1byte	0x0
+ 1342 007b 00          		.1byte	0x0
+ 1343 007c 00          		.1byte	0x12
+ 1344 007c 12          		.1byte	0x1
+ 1345 007d 01          		.1byte	0x1
+ 1346 007d 01          		.1byte	0x49
+ 1347 007e 49          		.1byte	0x13
+ 1348 007e 13          		.1byte	0x0
+ 1349 007f 00          		.1byte	0x0
+ 1350 007f 00          		.1byte	0x0
+ 1351 0080 00          		.section	.debug_pubnames,"",@progbits
+ 1352                 		.4byte	0xb0
+ 1353 0000 00 00 00 B0 		.2byte	0x2
+ 1354 0002 00 02       		.4byte	.Ldebug_info0
+ 1355 0003 00 00 00 00 		.4byte	0x30a
+ 1356 0005 00 00 03 0A 		.4byte	0x150
+ 1357 0007 00 00 01 50 		.ascii "GAIAClientProcessCommand\000"
+ 1358 0009 47 41 49 41 		.4byte	0x1a2
+ 1358      43 6C 69 65 
+ 1358      6E 74 50 72 
+ 1358      6F 63 65 73 
+ 1358      73 43 6F 6D 
+ 1359 0015 00 00 01 A2 		.ascii "GaiaClientSendCommandPacket\000"
+ 1360 0017 47 61 69 61 		.4byte	0x210
+ 1360      43 6C 69 65 
+ 1360      6E 74 53 65 
+ 1360      6E 64 43 6F 
+ 1360      6D 6D 61 6E 
+ 1361 0025 00 00 02 10 		.ascii "GaiaClientSendDisconnectPacket\000"
+ 1362 0027 47 61 69 61 		.4byte	0x262
+ 1362      43 6C 69 65 
+ 1362      6E 74 53 65 
+ 1362      6E 64 44 69 
+ 1362      73 63 6F 6E 
+ 1363 0037 00 00 02 62 		.ascii "GaiaClientSendConnectPacket\000"
+ 1364 0039 47 61 69 61 		.4byte	0x2a8
+ 1364      43 6C 69 65 
+ 1364      6E 74 53 65 
+ 1364      6E 64 43 6F 
+ 1364      6E 6E 65 63 
+ 1365 0047 00 00 02 A8 		.ascii "GaiaClientSendAcknowledgement\000"
+ 1366 0049 47 61 69 61 		.4byte	0x0
+ 1366      43 6C 69 65 
+ 1366      6E 74 53 65 
+ 1366      6E 64 41 63 
+ 1366      6B 6E 6F 77 
+ 1367 0058 00 00 00 00 		.section	.debug_aranges,"",@progbits
+ 1368                 		.4byte	0x4c
+ 1369 0000 00 00 00 4C 		.2byte	0x2
+ 1370 0002 00 02       		.4byte	.Ldebug_info0
+ 1371 0003 00 00 00 00 		.1byte	0x4
+ 1372 0005 04          		.1byte	0x0
+ 1373 0005 00          		.2byte	0x0
+ 1374 0006 00 00       		.2byte	0x0
+ 1375 0007 00 00       		.4byte	.LFB2
+ 1376 0008 00 00 00 00 		.4byte	.LFE2-.LFB2
+ 1377 000a 00 00 00 00 		.4byte	.LFB3
+ 1378 000c 00 00 00 00 		.4byte	.LFE3-.LFB3
+ 1379 000e 00 00 00 00 		.4byte	.LFB4
+ 1380 0010 00 00 00 00 		.4byte	.LFE4-.LFB4
+ 1381 0012 00 00 00 00 		.4byte	.LFB5
+ 1382 0014 00 00 00 00 		.4byte	.LFE5-.LFB5
+ 1383 0016 00 00 00 00 		.4byte	.LFB6
+ 1384 0018 00 00 00 00 		.4byte	.LFE6-.LFB6
+ 1385 001a 00 00 00 00 		.4byte	.LFB7
+ 1386 001c 00 00 00 00 		.4byte	.LFE7-.LFB7
+ 1387 001e 00 00 00 00 		.4byte	.LFB8
+ 1388 0020 00 00 00 00 		.4byte	.LFE8-.LFB8
+ 1389 0022 00 00 00 00 		.4byte	0x0
+ 1390 0024 00 00 00 00 		.4byte	0x0
+ 1391 0026 00 00 00 00 		.section	.debug_ranges,"",@progbits
+ 1392                 	.Ldebug_ranges0:
+ 1393                 		.4byte	.Ltext0
+ 1394 0000 00 00 00 00 		.4byte	.Letext0
+ 1395 0002 00 00 00 00 		.4byte	.LFB2
+ 1396 0004 00 00 00 00 		.4byte	.LFE2
+ 1397 0006 00 00 00 00 		.4byte	.LFB3
+ 1398 0008 00 00 00 00 		.4byte	.LFE3
+ 1399 000a 00 00 00 00 		.4byte	.LFB4
+ 1400 000c 00 00 00 00 		.4byte	.LFE4
+ 1401 000e 00 00 00 00 		.4byte	.LFB5
+ 1402 0010 00 00 00 00 		.4byte	.LFE5
+ 1403 0012 00 00 00 00 		.4byte	.LFB6
+ 1404 0014 00 00 00 00 		.4byte	.LFE6
+ 1405 0016 00 00 00 00 		.4byte	.LFB7
+ 1406 0018 00 00 00 00 		.4byte	.LFE7
+ 1407 001a 00 00 00 00 		.4byte	.LFB8
+ 1408 001c 00 00 00 00 		.4byte	.LFE8
+ 1409 001e 00 00 00 00 		.4byte	0x0
+ 1410 0020 00 00 00 00 		.4byte	0x0
+ 1411 0022 00 00 00 00 		.section	.debug_str,"MS",@progbits,1
+ 1412                 	.LASF31:
+ 1413                 		.ascii "C:\\Users\\Admin\\Desktop\\1024_Uart_rev0.2 - Copy\\1024_Uart_rev0.2\\application\\csr_mes
+ 1414 0000 43 3A 5C 55 	.LASF11:
+ 1414      73 65 72 73 
+ 1414      5C 41 64 6D 
+ 1414      69 6E 5C 44 
+ 1414      65 73 6B 74 
+ 1415                 		.ascii "device_handle_id\000"
+ 1416 002d 64 65 76 69 	.LASF17:
+ 1416      63 65 5F 68 
+ 1416      61 6E 64 6C 
+ 1416      65 5F 69 64 
+ 1416      00 
+ 1417                 		.ascii "gaiaHandleNotificationCommand\000"
+ 1418 0036 67 61 69 61 	.LASF2:
+ 1418      48 61 6E 64 
+ 1418      6C 65 4E 6F 
+ 1418      74 69 66 69 
+ 1418      63 61 74 69 
+ 1419                 		.ascii "short unsigned int\000"
+ 1420 0045 73 68 6F 72 	.LASF0:
+ 1420      74 20 75 6E 
+ 1420      73 69 67 6E 
+ 1420      65 64 20 69 
+ 1420      6E 74 00 
+ 1421                 		.ascii "unsigned int\000"
+ 1422 004e 75 6E 73 69 	.LASF29:
+ 1422      67 6E 65 64 
+ 1422      20 69 6E 74 
+ 1422      00 
+ 1423                 		.ascii "GNU C 4.3.4 CSR version 31 for xap [2855778]\000"
+ 1424 0055 47 4E 55 20 	.LASF28:
+ 1424      43 20 34 2E 
+ 1424      33 2E 34 20 
+ 1424      43 53 52 20 
+ 1424      76 65 72 73 
+ 1425                 		.ascii "status\000"
+ 1426 006b 73 74 61 74 	.LASF24:
+ 1426      75 73 00 
+ 1427                 		.ascii "data\000"
+ 1428 006f 64 61 74 61 	.LASF6:
+ 1428      00 
+ 1429                 		.ascii "long long unsigned int\000"
+ 1430 0071 6C 6F 6E 67 	.LASF19:
+ 1430      20 6C 6F 6E 
+ 1430      67 20 75 6E 
+ 1430      73 69 67 6E 
+ 1430      65 64 20 69 
+ 1431                 		.ascii "payload_len\000"
+ 1432 007d 70 61 79 6C 	.LASF7:
+ 1432      6F 61 64 5F 
+ 1432      6C 65 6E 00 
+ 1433                 		.ascii "unsigned char\000"
+ 1434 0083 75 6E 73 69 	.LASF4:
+ 1434      67 6E 65 64 
+ 1434      20 63 68 61 
+ 1434      72 00 
+ 1435                 		.ascii "long unsigned int\000"
+ 1436 008a 6C 6F 6E 67 	.LASF22:
+ 1436      20 75 6E 73 
+ 1436      69 67 6E 65 
+ 1436      64 20 69 6E 
+ 1436      74 00 
+ 1437                 		.ascii "GaiaClientSendCommandPacket\000"
+ 1438 0093 47 61 69 61 	.LASF8:
+ 1438      43 6C 69 65 
+ 1438      6E 74 53 65 
+ 1438      6E 64 43 6F 
+ 1438      6D 6D 61 6E 
+ 1439                 		.ascii "uint8\000"
+ 1440 00a1 75 69 6E 74 	.LASF23:
+ 1440      38 00 
+ 1441                 		.ascii "size_payload\000"
+ 1442 00a4 73 69 7A 65 	.LASF30:
+ 1442      5F 70 61 79 
+ 1442      6C 6F 61 64 
+ 1442      00 
+ 1443                 		.ascii "../mesh_common/client/gaia/gaia_client.c\000"
+ 1444 00aa 2E 2E 2F 6D 	.LASF27:
+ 1444      65 73 68 5F 
+ 1444      63 6F 6D 6D 
+ 1444      6F 6E 2F 63 
+ 1444      6C 69 65 6E 
+ 1445                 		.ascii "GaiaClientSendAcknowledgement\000"
+ 1446 00bf 47 61 69 61 	.LASF18:
+ 1446      43 6C 69 65 
+ 1446      6E 74 53 65 
+ 1446      6E 64 41 63 
+ 1446      6B 6E 6F 77 
+ 1447                 		.ascii "gaiaHandleDataTransferCommandAck\000"
+ 1448 00ce 67 61 69 61 	.LASF9:
+ 1448      48 61 6E 64 
+ 1448      6C 65 44 61 
+ 1448      74 61 54 72 
+ 1448      61 6E 73 66 
+ 1449                 		.ascii "uint16\000"
+ 1450 00de 75 69 6E 74 	.LASF21:
+ 1450      31 36 00 
+ 1451                 		.ascii "GAIAClientProcessCommand\000"
+ 1452 00e2 47 41 49 41 	.LASF14:
+ 1452      43 6C 69 65 
+ 1452      6E 74 50 72 
+ 1452      6F 63 65 73 
+ 1452      73 43 6F 6D 
+ 1453                 		.ascii "command_id\000"
+ 1454 00ee 63 6F 6D 6D 	.LASF20:
+ 1454      61 6E 64 5F 
+ 1454      69 64 00 
+ 1455                 		.ascii "event_code\000"
+ 1456 00f4 65 76 65 6E 	.LASF12:
+ 1456      74 5F 63 6F 
+ 1456      64 65 00 
+ 1457                 		.ascii "char\000"
+ 1458 00f9 63 68 61 72 	.LASF16:
+ 1458      00 
+ 1459                 		.ascii "payload\000"
+ 1460 00fc 70 61 79 6C 	.LASF13:
+ 1460      6F 61 64 00 
+ 1461                 		.ascii "device_id\000"
+ 1462 0100 64 65 76 69 	.LASF5:
+ 1462      63 65 5F 69 
+ 1462      64 00 
+ 1463                 		.ascii "long long int\000"
+ 1464 0105 6C 6F 6E 67 	.LASF1:
+ 1464      20 6C 6F 6E 
+ 1464      67 20 69 6E 
+ 1464      74 00 
+ 1465                 		.ascii "short int\000"
+ 1466 010c 73 68 6F 72 	.LASF15:
+ 1466      74 20 69 6E 
+ 1466      74 00 
+ 1467                 		.ascii "payload_length\000"
+ 1468 0111 70 61 79 6C 	.LASF3:
+ 1468      6F 61 64 5F 
+ 1468      6C 65 6E 67 
+ 1468      74 68 00 
+ 1469                 		.ascii "long int\000"
+ 1470 0118 6C 6F 6E 67 	.LASF26:
+ 1470      20 69 6E 74 
+ 1470      00 
+ 1471                 		.ascii "GaiaClientSendConnectPacket\000"
+ 1472 011d 47 61 69 61 	.LASF10:
+ 1472      43 6C 69 65 
+ 1472      6E 74 53 65 
+ 1472      6E 64 43 6F 
+ 1472      6E 6E 65 63 
+ 1473                 		.ascii "signed char\000"
+ 1474 012b 73 69 67 6E 	.LASF25:
+ 1474      65 64 20 63 
+ 1474      68 61 72 00 
+ 1475                 		.ascii "GaiaClientSendDisconnectPacket\000"
+ 1476 0131 47 61 69 61 		.ident	"GCC: (GNU) 4.3.4 CSR version 31 for xap [2855778]"
+ 1476      43 6C 69 65 
+ 1476      6E 74 53 65 
+ 1476      6E 64 44 69 
+ 1476      73 63 6F 6E 
+ 1477                 	...
